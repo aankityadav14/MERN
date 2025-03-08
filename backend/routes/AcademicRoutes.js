@@ -7,7 +7,7 @@ const {
   getAcademicsByYear,
   deleteAcademic,
   updateAcademic 
-} = require("../controllers/academicController");
+} = require("../controllers/AcademicController");
 
 const router = express.Router();
 
