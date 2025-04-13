@@ -3,6 +3,8 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import { FiEdit2, FiTrash2, FiChevronDown, FiChevronUp, FiUpload } from 'react-icons/fi';
 import { useTheme } from '../../context/ThemeContext';
+import { timetableAPI, showDeleteConfirmation } from '../../api/privateapi';
+import Swal from 'sweetalert2';
 
 // Modal Component
 const Modal = ({ isOpen, onClose, children }) => {
@@ -63,8 +65,8 @@ const TimeTableForm = () => {
 
   const fetchTimeTables = async () => {
     try {
-      const response = await axios.get("http://localhost:5000/api/timetable");
-      setTimeTables(response.data);
+      const data = await timetableAPI.getAllTimetables();
+      setTimeTables(data);
     } catch (error) {
       toast.error("Failed to fetch timetables");
     }
@@ -84,7 +86,6 @@ const TimeTableForm = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const token = localStorage.getItem("token");
 
     const formData = new FormData();
     formData.append("year", timeTableData.year);
@@ -95,24 +96,10 @@ const TimeTableForm = () => {
 
     try {
       if (editData?._id) {
-        await axios.put(
-          `http://localhost:5000/api/timetable/${editData._id}`,
-          formData,
-          {
-            headers: {
-              "Content-Type": "multipart/form-data",
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+        await timetableAPI.updateTimetable(editData._id, formData);
         toast.success("Timetable updated successfully");
       } else {
-        await axios.post("http://localhost:5000/api/timetable", formData, {
-          headers: {
-            "Content-Type": "multipart/form-data",
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        await timetableAPI.createTimetable(formData);
         toast.success("Timetable added successfully");
       }
       
@@ -135,19 +122,14 @@ const TimeTableForm = () => {
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm("Are you sure you want to delete this timetable?")) {
-      try {
-        const token = localStorage.getItem("token");
-        await axios.delete(`http://localhost:5000/api/timetable/${id}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        toast.success("Timetable deleted successfully");
-        fetchTimeTables();
-      } catch (error) {
-        toast.error(error.response?.data?.message || "Failed to delete timetable");
-      }
+    if (await showDeleteConfirmation('timetable')) {
+        try {
+            await timetableAPI.deleteTimetable(id);
+            toast.success("Timetable deleted successfully");
+            fetchTimeTables();
+        } catch (error) {
+            toast.error(error.response?.data?.message || "Failed to delete timetable");
+        }
     }
   };
 

@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
 import { toast } from "react-toastify";
 import { FiUpload, FiEdit2, FiPlus, FiExternalLink, FiTrash2, FiChevronDown, FiChevronUp, FiX, FiCheck, FiMapPin, FiCalendar, FiSearch, FiFilter } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTheme } from '../../context/ThemeContext';
+import { eventAPI, showDeleteConfirmation } from '../../api/privateapi';
+import Swal from 'sweetalert2';
 
 // Modal Component
 const Modal = ({ isOpen, onClose, children }) => {
@@ -76,8 +77,8 @@ const EventForm = () => {
   // Fetch events
   const fetchEvents = async () => {
     try {
-      const response = await axios.get("http://localhost:5000/api/events");
-      setEvents(response.data);
+      const data = await eventAPI.getAllEvents();
+      setEvents(data);
     } catch (error) {
       toast.error("Failed to fetch events");
     }
@@ -105,34 +106,15 @@ const EventForm = () => {
     eventFormData.append("date", formData.date);
     eventFormData.append("location", formData.location);
     if (formData.imageUrl && formData.imageUrl instanceof File) {
-      eventFormData.append("image", formData.imageUrl); // Change "media" to "image" to match API
+      eventFormData.append("image", formData.imageUrl);
     }
-    const token = localStorage.getItem("token");
-    console.log(token);
 
     try {
       if (editData?._id) {
-        // Update the edit request
-
-        await axios.put(
-          `http://localhost:5000/api/events/${editData._id}`,
-          eventFormData,
-          {
-            headers: {
-              "Content-Type": "multipart/form-data",
-              Authorization: `Bearer ${token}`, // Add auth token
-            },
-          }
-        );
+        await eventAPI.updateEvent(editData._id, eventFormData);
         toast.success("Event updated successfully");
       } else {
-        // Create request remains the same
-        await axios.post("http://localhost:5000/api/events", eventFormData, {
-          headers: {
-            "Content-Type": "multipart/form-data",
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        });
+        await eventAPI.createEvent(eventFormData);
         toast.success("Event created successfully");
       }
 
@@ -163,13 +145,9 @@ const EventForm = () => {
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm("Are you sure you want to delete this event?")) {
+    if (await showDeleteConfirmation('event')) {
       try {
-        await axios.delete(`http://localhost:5000/api/events/${id}`, {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`, // Add auth token
-          },
-        });
+        await eventAPI.deleteEvent(id);
         toast.success("Event deleted successfully");
         fetchEvents();
       } catch (error) {

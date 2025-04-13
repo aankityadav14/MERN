@@ -3,6 +3,7 @@ import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
 import { FaImage, FaVideo, FaFilePdf, FaTimes } from "react-icons/fa";
 import { useTheme } from "../../context/ThemeContext";
+import { getGalleryImages, getGalleryCategories, getImagesByCategory } from '../../api/publicapi';
 
 const Gallery = () => {
   const { isDarkMode } = useTheme();
@@ -27,9 +28,9 @@ const Gallery = () => {
   useEffect(() => {
     const fetchGallery = async () => {
       try {
-        const response = await axios.get("http://localhost:5000/api/gallery"); // Backend API
-        console.log(response.data);
-        setGalleries(response.data);
+        const data = await getGalleryImages(); // Backend API
+        console.log(data);
+        setGalleries(data);
       } catch (err) {
         setError("Error fetching gallery images.");
         console.error(err);

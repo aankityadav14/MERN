@@ -4,6 +4,8 @@ import { toast } from "react-toastify";
 import { FiUserPlus, FiUpload, FiEdit2, FiTrash2 } from "react-icons/fi";
 import { FiChevronDown, FiChevronUp } from 'react-icons/fi';
 import { useTheme } from '../../context/ThemeContext';
+import { mentorMenteeAPI, showDeleteConfirmation } from '../../api/privateapi';
+import Swal from 'sweetalert2';
 
 // Modal Component
 const Modal = ({ isOpen, onClose, children }) => {
@@ -64,8 +66,8 @@ const MentorMenteeForm = () => {
   // Fetch all records
   const fetchRecords = async () => {
     try {
-      const response = await axios.get("http://localhost:5000/api/mentor-mentee");
-      setRecords(response.data);
+      const data = await mentorMenteeAPI.getAllRecords();
+      setRecords(data);
     } catch (error) {
       toast.error("Failed to fetch records");
     }
@@ -116,26 +118,10 @@ const MentorMenteeForm = () => {
 
     try {
       if (editData?._id) {
-        await axios.put(
-          `http://localhost:5000/api/mentor-mentee/${editData._id}`,
-          mentorMenteeFormData,
-          {
-            headers: {
-              "Content-Type": "multipart/form-data"
-            }
-          }
-        );
+        await mentorMenteeAPI.updateRecord(editData._id, mentorMenteeFormData);
         toast.success("Mentor-Mentee record updated successfully");
       } else {
-        await axios.post(
-          "http://localhost:5000/api/mentor-mentee",
-          mentorMenteeFormData,
-          {
-            headers: {
-              "Content-Type": "multipart/form-data"
-            }
-          }
-        );
+        await mentorMenteeAPI.createRecord(mentorMenteeFormData);
         toast.success("Mentor-Mentee record created successfully");
       }
 
@@ -147,8 +133,8 @@ const MentorMenteeForm = () => {
         mentees: [{ name: "", rollNo: "" }],
         media: null
       });
-
-      if (onSubmitSuccess) onSubmitSuccess();
+      setIsModalOpen(false);
+      fetchRecords();
 
     } catch (error) {
       toast.error(error.response?.data?.message || "Error processing request");
@@ -170,14 +156,14 @@ const MentorMenteeForm = () => {
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm("Are you sure you want to delete this record?")) {
-      try {
-        await axios.delete(`http://localhost:5000/api/mentor-mentee/${id}`);
-        toast.success("Record deleted successfully");
-        fetchRecords();
-      } catch (error) {
-        toast.error("Failed to delete record");
-      }
+    if (await showDeleteConfirmation('mentor-mentee record')) {
+        try {
+            await mentorMenteeAPI.deleteRecord(id);
+            toast.success("Record deleted successfully");
+            fetchRecords();
+        } catch (error) {
+            toast.error(error.response?.data?.message || "Failed to delete record");
+        }
     }
   };
 
@@ -313,7 +299,7 @@ const MentorMenteeForm = () => {
                               Open Document
                               <svg className="w-4 h-4 ml-2" fill="currentColor" viewBox="0 0 20 20">
                                 <path d="M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z" />
-                                <path d="M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z" />
+                                <path d="M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5z" />
                               </svg>
                             </a>
                           </div>

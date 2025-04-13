@@ -52,6 +52,7 @@ import event from "../../assets/event.png";
 import fieldVisit from "../../assets/filedvist.jpeg";
 import teachers from "../../assets/teachers.jpeg";
 import techExtreme from "../../assets/techxetrem.jpeg";
+import { getAllAchievements, getAllEvents, getAllFaculty, getAllNotices } from "../../api/publicapi";
 
 const bannerImages = [
   { src: event, alt: "Department Events" },
@@ -77,20 +78,20 @@ const Home = () => {
       try {
         const [facultyRes, achievementsRes, eventsRes, noticesRes] =
           await Promise.all([
-            axios.get("http://localhost:5000/api/faculty"),
-            axios.get("http://localhost:5000/api/achievements"),
-            axios.get("http://localhost:5000/api/events"),
-            axios.get("http://localhost:5000/api/notices"),
+            getAllFaculty(),
+            getAllAchievements(),
+            getAllEvents(),
+            getAllNotices(),
           ]);
 
-        console.log("Faculty Response:", facultyRes.data);
-        console.log("Achievements Response:", achievementsRes.data);
-        console.log("Events Response:", eventsRes.data);
+        console.log("Faculty Response:", facultyRes);
+        console.log("Achievements Response:", achievementsRes);
+        console.log("Events Response:", eventsRes);
 
-        setFacultyList(facultyRes.data || []);
-        setAchievements(achievementsRes.data || []);
-        setEvents(eventsRes.data || []);
-        setNotices(noticesRes.data || []);
+        setFacultyList(facultyRes || []);
+        setAchievements(achievementsRes || []);
+        setEvents(eventsRes || []);
+        setNotices(noticesRes || []);
       } catch (error) {
         console.error("Error fetching data:", error);
         setError(error.message);

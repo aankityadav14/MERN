@@ -3,6 +3,7 @@ import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
 import { FaFilePdf, FaCalendarAlt, FaUserGraduate, FaSearch, FaFilter, FaDownload } from "react-icons/fa";
 import { useTheme } from "../../context/ThemeContext";
+import { getTimetableData, getTimetableByClass, getTimetableByTeacher } from '../../api/publicapi';
 
 const Timetable = () => {
   const { isDarkMode } = useTheme();
@@ -15,8 +16,8 @@ const Timetable = () => {
   useEffect(() => {
     const fetchTimetable = async () => {
       try {
-        const response = await axios.get("http://localhost:5000/api/timetable");
-        setTimetable(response.data);
+        const data = await getTimetableData();
+        setTimetable(data);
       } catch (err) {
         setError("Error fetching timetable.");
         console.error(err);

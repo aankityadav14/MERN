@@ -3,6 +3,7 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import { FiEdit2, FiTrash2, FiChevronDown, FiChevronUp, FiUpload } from 'react-icons/fi';
 import { useTheme } from '../../context/ThemeContext';
+import { alumniAPI, showDeleteConfirmation } from '../../api/privateapi';
 
 // Modal Component
 const Modal = ({ isOpen, onClose, children }) => {
@@ -53,8 +54,8 @@ const Aluminia = () => {
 
   const fetchAlumni = async () => {
     try {
-      const response = await axios.get("http://localhost:5000/api/alumni");
-      setAlumni(response.data);
+      const data = await alumniAPI.getAllAlumni();
+      setAlumni(data);
     } catch (error) {
       toast.error("Failed to fetch alumni");
     }
@@ -74,7 +75,6 @@ const Aluminia = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const token = localStorage.getItem("token");
 
     const alumniFormData = new FormData();
     Object.keys(formData).forEach((key) => {
@@ -87,28 +87,10 @@ const Aluminia = () => {
 
     try {
       if (editData?._id) {
-        await axios.put(
-          `http://localhost:5000/api/alumni/${editData._id}`,
-          alumniFormData,
-          {
-            headers: {
-              "Content-Type": "multipart/form-data",
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+        await alumniAPI.updateAlumni(editData._id, alumniFormData);
         toast.success("Alumni updated successfully");
       } else {
-        await axios.post(
-          "http://localhost:5000/api/alumni",
-          alumniFormData,
-          {
-            headers: {
-              "Content-Type": "multipart/form-data",
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+        await alumniAPI.createAlumni(alumniFormData);
         toast.success("Alumni added successfully");
       }
       
@@ -147,14 +129,9 @@ const Aluminia = () => {
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm("Are you sure you want to delete this alumni?")) {
+    if (await showDeleteConfirmation('alumni record')) {
       try {
-        const token = localStorage.getItem("token");
-        await axios.delete(`http://localhost:5000/api/alumni/${id}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        await alumniAPI.deleteAlumni(id);
         toast.success("Alumni deleted successfully");
         fetchAlumni();
       } catch (error) {

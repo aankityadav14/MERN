@@ -3,6 +3,7 @@ import axios from "axios";
 import { FaFilePdf, FaFileWord, FaDownload, FaFilter, FaTimes, FaBook } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTheme } from "../../context/ThemeContext";
+import { getAcademicInfo, getDepartmentInfo, getSyllabus } from '../../api/publicapi';
 
 const Academic = () => {
   const { isDarkMode } = useTheme();
@@ -19,8 +20,8 @@ const Academic = () => {
     const fetchAcademics = async () => {
       try {
         setLoading(true);
-        const response = await axios.get('http://localhost:5000/api/academic');
-        setAcademics(response.data);
+        const data = await getAcademicInfo();
+        setAcademics(data);
         setError(null);
       } catch (err) {
         setError("Unable to load resources. Please try again later.");

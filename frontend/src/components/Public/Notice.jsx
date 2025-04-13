@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import axios from "axios";
 import { FiDownload, FiCalendar, FiUser, FiFileText, FiSearch } from "react-icons/fi";
 import { useTheme } from "../../context/ThemeContext";
+import { getAllNotices, getLatestNotices, getNoticeById } from '../../api/publicapi';
 
 const NoticePage = () => {
   const { isDarkMode } = useTheme();
@@ -15,8 +16,8 @@ const NoticePage = () => {
   useEffect(() => {
     const fetchNotices = async () => {
       try {
-        const response = await axios.get("http://localhost:5000/api/notices");
-        setNotices(response.data);
+        const data = await getAllNotices();
+        setNotices(data);
         setError(null);
       } catch (err) {
         setError("Failed to load notices");

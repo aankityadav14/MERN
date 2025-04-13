@@ -9,6 +9,7 @@ import logo1 from "../../assets/CollogeLogo.png";
 import Swal from 'sweetalert2';
 
 import { useTheme } from "../../context/ThemeContext";
+import { login } from "../../api/publicapi";
 const Login = ({ setUser }) => {
   const { isDarkMode } = useTheme();
   const [email, setEmail] = useState("");
@@ -30,10 +31,7 @@ const Login = ({ setUser }) => {
 
     setIsLoading(true);
     try {
-      const response = await axios.post(
-        "http://localhost:5000/api/auth/login",
-        { email, password }
-      );
+      const response = await login({ email, password });
 
       if (response.data.data && response.data.data.token) {
         const { token } = response.data.data;

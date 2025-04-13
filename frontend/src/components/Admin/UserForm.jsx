@@ -4,6 +4,7 @@ import { toast } from 'react-toastify';
 import { FiEdit2, FiTrash2, FiChevronDown, FiChevronUp, FiX, FiCheck, FiPlus, FiUser, FiMail, FiLock, FiBriefcase } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTheme } from '../../context/ThemeContext';
+import { userAPI, showDeleteConfirmation } from '../../api/privateapi';
 
 // Modal Component (same as FacultyForm)
 const Modal = ({ isOpen, onClose, children }) => {
@@ -64,8 +65,8 @@ const UserForm = () => {
     name: '',
     email: '',
     password: '',
+    currentPassword: '',
     role: 'faculty',
-    // department: ''
   });
 
   const roles = ['admin', 'faculty'];
@@ -73,11 +74,8 @@ const UserForm = () => {
 
   const fetchUsers = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await axios.get('http://localhost:5000/api/auth/', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setUsers(response.data);
+      const data = await userAPI.getAllUsers();
+      setUsers(data);
     } catch (error) {
       toast.error('Failed to fetch users');
     }
@@ -94,30 +92,24 @@ const UserForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
-    const token = localStorage.getItem('token');
 
     try {
       if (editData?._id) {
-        await axios.put(
-          `http://localhost:5000/api/auth/users/${editData._id}`,
-          formData,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+        const updatePayload = {
+          name: formData.name,
+          email: formData.email,
+          role: formData.role
+        };
+
+        if (formData.password) {
+          updatePayload.currentPassword = formData.currentPassword;
+          updatePayload.newPassword = formData.password;
+        }
+
+        await userAPI.updateUser(editData._id, updatePayload);
         toast.success('User updated successfully');
       } else {
-        await axios.post(
-          'http://localhost:5000/api/auth/register',
-          formData,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+        await userAPI.createUser(formData);
         toast.success('User created successfully');
       }
 
@@ -125,8 +117,8 @@ const UserForm = () => {
         name: '',
         email: '',
         password: '',
+        currentPassword: '',
         role: 'faculty',
-        // department: ''
       });
       setIsModalOpen(false);
       fetchUsers();
@@ -138,20 +130,27 @@ const UserForm = () => {
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm('Are you sure you want to delete this user?')) {
+    if (await showDeleteConfirmation('user')) {
       try {
-        const token = localStorage.getItem('token');
-        await axios.delete(`http://localhost:5000/api/auth/users/${id}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        toast.success('User deleted successfully');
+        await userAPI.deleteUser(id);
+        toast.success("User deleted successfully");
         fetchUsers();
       } catch (error) {
-        toast.error(error.response?.data?.message || 'Failed to delete user');
+        toast.error(error.response?.data?.message || "Failed to delete user");
       }
     }
+  };
+
+  const handleEdit = (user) => {
+    setEditData(user);
+    setFormData({
+      name: user.name,
+      email: user.email,
+      password: '',
+      currentPassword: '',
+      role: user.role,
+    });
+    setIsModalOpen(true);
   };
 
   return (
@@ -171,8 +170,8 @@ const UserForm = () => {
               name: '',
               email: '',
               password: '',
+              currentPassword: '',
               role: 'faculty',
-              // department: ''
             });
             setIsModalOpen(true);
           }}
@@ -211,17 +210,7 @@ const UserForm = () => {
                     whileHover={{ scale: 1.1 }}
                     whileTap={{ scale: 0.9 }}
                     className="p-2 text-blue-400 hover:bg-blue-700 rounded-lg transition-colors"
-                    onClick={() => {
-                      setEditData(user);
-                      setFormData({
-                        name: user.name,
-                        email: user.email,
-                        password: '',
-                        role: user.role,
-                        // department: user.department
-                      });
-                      setIsModalOpen(true);
-                    }}
+                    onClick={() => handleEdit(user)}
                   >
                     <FiEdit2 className="text-xl" />
                   </motion.button>
@@ -303,29 +292,84 @@ const UserForm = () => {
             </div>
 
             <div className="md:col-span-2">
-              <label className={`block text-sm font-medium mb-2 ${
-                isDarkMode ? 'text-gray-200' : 'text-gray-700'
-              }`}>
-                Password {editData && '(Leave blank to keep current)'}
-              </label>
-              <div className="relative">
-                <FiLock className={`absolute left-3 top-3 ${
-                  isDarkMode ? 'text-gray-400' : 'text-gray-500'
-                }`} />
-                <input
-                  type="password"
-                  name="password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  className={`w-full pl-10 pr-4 py-2 rounded-xl border focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${
-                    isDarkMode 
-                      ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
-                      : 'bg-white border-gray-300 text-gray-900'
-                  }`}
-                  placeholder={editData ? '••••••••' : 'Enter password'}
-                  required={!editData}
-                />
-              </div>
+              {editData ? (
+                <>
+                  <div className="mb-4">
+                    <label className={`block text-sm font-medium mb-2 ${
+                      isDarkMode ? 'text-gray-200' : 'text-gray-700'
+                    }`}>
+                      Current Password
+                    </label>
+                    <div className="relative">
+                      <FiLock className={`absolute left-3 top-3 ${
+                        isDarkMode ? 'text-gray-400' : 'text-gray-500'
+                      }`} />
+                      <input
+                        type="password"
+                        name="currentPassword"
+                        value={formData.currentPassword}
+                        onChange={handleChange}
+                        className={`w-full pl-10 pr-4 py-2 rounded-xl border focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${
+                          isDarkMode 
+                            ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                            : 'bg-white border-gray-300 text-gray-900'
+                        }`}
+                        placeholder="Enter current password"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className={`block text-sm font-medium mb-2 ${
+                      isDarkMode ? 'text-gray-200' : 'text-gray-700'
+                    }`}>
+                      New Password (Leave blank to keep current)
+                    </label>
+                    <div className="relative">
+                      <FiLock className={`absolute left-3 top-3 ${
+                        isDarkMode ? 'text-gray-400' : 'text-gray-500'
+                      }`} />
+                      <input
+                        type="password"
+                        name="password"
+                        value={formData.password}
+                        onChange={handleChange}
+                        className={`w-full pl-10 pr-4 py-2 rounded-xl border focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${
+                          isDarkMode 
+                            ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                            : 'bg-white border-gray-300 text-gray-900'
+                        }`}
+                        placeholder="Enter new password"
+                      />
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div>
+                  <label className={`block text-sm font-medium mb-2 ${
+                    isDarkMode ? 'text-gray-200' : 'text-gray-700'
+                  }`}>
+                    Password
+                  </label>
+                  <div className="relative">
+                    <FiLock className={`absolute left-3 top-3 ${
+                      isDarkMode ? 'text-gray-400' : 'text-gray-500'
+                    }`} />
+                    <input
+                      type="password"
+                      name="password"
+                      value={formData.password}
+                      onChange={handleChange}
+                      className={`w-full pl-10 pr-4 py-2 rounded-xl border focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${
+                        isDarkMode 
+                          ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                          : 'bg-white border-gray-300 text-gray-900'
+                      }`}
+                      placeholder="Enter password"
+                      required
+                    />
+                  </div>
+                </div>
+              )}
             </div>
 
             <div>

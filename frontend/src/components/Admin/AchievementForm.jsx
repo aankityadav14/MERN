@@ -4,6 +4,8 @@ import { toast } from 'react-toastify';
 import { FiUpload, FiEdit2, FiTrash2, FiChevronDown, FiChevronUp, FiX, FiCheck, FiPlus } from 'react-icons/fi';
 import { useTheme } from '../../context/ThemeContext';
 import { motion, AnimatePresence } from 'framer-motion';
+import { achievementAPI, showDeleteConfirmation } from '../../api/privateapi';
+import Swal from 'sweetalert2';
 
 // Modal Component
 const Modal = ({ isOpen, onClose, children }) => {
@@ -62,8 +64,8 @@ const AchievementForm = () => {
 
   const fetchAchievements = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/achievements');
-      setAchievements(response.data);
+      const data = await achievementAPI.getAllAchievements();
+      setAchievements(data);
     } catch (error) {
       toast.error('Failed to fetch achievements');
     }
@@ -92,7 +94,6 @@ const AchievementForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
-    const token = localStorage.getItem('token');
 
     const achievementFormData = new FormData();
     Object.keys(formData).forEach(key => {
@@ -103,28 +104,10 @@ const AchievementForm = () => {
 
     try {
       if (editData?._id) {
-        await axios.put(
-          `http://localhost:5000/api/achievements/${editData._id}`,
-          achievementFormData,
-          {
-            headers: {
-              'Content-Type': 'multipart/form-data',
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+        await achievementAPI.updateAchievement(editData._id, achievementFormData);
         toast.success('Achievement updated successfully');
       } else {
-        await axios.post(
-          'http://localhost:5000/api/achievements',
-          achievementFormData,
-          {
-            headers: {
-              'Content-Type': 'multipart/form-data',
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+        await achievementAPI.createAchievement(achievementFormData);
         toast.success('Achievement added successfully');
       }
 
@@ -158,6 +141,18 @@ const AchievementForm = () => {
       };
     }
     return { image: url, preview: url };
+  };
+
+  const handleDelete = async (id) => {
+    if (await showDeleteConfirmation('achievement')) {
+      try {
+        await achievementAPI.deleteAchievement(id);
+        toast.success("Achievement deleted successfully");
+        fetchAchievements();
+      } catch (error) {
+        toast.error(error.response?.data?.message || "Failed to delete achievement");
+      }
+    }
   };
 
   return (
@@ -247,11 +242,9 @@ const AchievementForm = () => {
                     whileHover={{ scale: 1.1 }}
                     whileTap={{ scale: 0.9 }}
                     className="p-2 text-red-400 hover:bg-red-700 rounded-lg transition-colors"
-                    onClick={() => {
-                      // Add delete handler here
-                      if (window.confirm('Are you sure you want to delete this achievement?')) {
-                        // Implement delete logic
-                      }
+                    onClick={async (e) => {
+                      e.stopPropagation();
+                      await handleDelete(achievement._id);
                     }}
                   >
                     <FiTrash2 className="text-xl" />

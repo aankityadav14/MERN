@@ -17,6 +17,8 @@ import {
 } from "react-icons/fi";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTheme } from "../../context/ThemeContext";
+import { noticeAPI, showDeleteConfirmation } from "../../api/privateapi";
+import Swal from "sweetalert2";
 
 // Modal Component
 const Modal = ({ isOpen, onClose, children }) => {
@@ -75,9 +77,9 @@ const NoticeForm = ({ editData, onSubmitSuccess }) => {
   // Fetch all notices
   const fetchNotices = async () => {
     try {
-      const response = await axios.get("http://localhost:5000/api/notices");
-      console.log(response.data);
-      setNotices(response.data);
+      const data = await noticeAPI.getAllNotices();
+      console.log(data);
+      setNotices(data);
     } catch (error) {
       toast.error("Failed to fetch notices");
     }
@@ -133,27 +135,11 @@ const NoticeForm = ({ editData, onSubmitSuccess }) => {
         formDataToSend.append("file", formData.file);
       }
 
-      const token = localStorage.getItem("token");
-      const config = {
-        headers: {
-          "Content-Type": "multipart/form-data",
-          Authorization: `Bearer ${token}`,
-        },
-      };
-
       if (editData?._id) {
-        await axios.put(
-          `http://localhost:5000/api/notices/${editData._id}`,
-          formDataToSend,
-          config
-        );
+        await noticeAPI.updateNotice(editData._id, formDataToSend);
         toast.success("Notice updated successfully");
       } else {
-        await axios.post(
-          "http://localhost:5000/api/notices",
-          formDataToSend,
-          config
-        );
+        await noticeAPI.createNotice(formDataToSend);
         toast.success("Notice created successfully");
       }
 
@@ -188,14 +174,9 @@ const NoticeForm = ({ editData, onSubmitSuccess }) => {
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm("Are you sure you want to delete this notice?")) {
+    if (await showDeleteConfirmation("notice")) {
       try {
-        const token = localStorage.getItem("token");
-        await axios.delete(`http://localhost:5000/api/notices/${id}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        await noticeAPI.deleteNotice(id);
         toast.success("Notice deleted successfully");
         fetchNotices();
       } catch (error) {
@@ -216,11 +197,13 @@ const NoticeForm = ({ editData, onSubmitSuccess }) => {
     setIsModalOpen(true);
   };
   const formatMediaUrl = (url) => {
-    if (!url) return "";
-    const match = url.match(/(?:id=|\/d\/)([a-zA-Z0-9_-]+)/);
-    return match ? `https://lh3.googleusercontent.com/d/${match[1]}` : url;
+    const match = url.match(/[-\w]{25,}/);
+
+    console.log(match);
+    return match
+      ? `https://lh3.googleusercontent.com/d/${match[0]}`
+      : `https://google.com/drive/folders/uc?export=view&id=${match[0]}`;
   };
-  
 
   return (
     <div
@@ -349,7 +332,6 @@ const NoticeForm = ({ editData, onSubmitSuccess }) => {
                   }`}
                 >
                   <div className="p-6 grid md:grid-cols-2 gap-8">
-                    
                     <div>
                       <h3
                         className={`text-lg font-semibold mb-4 ${
@@ -366,13 +348,15 @@ const NoticeForm = ({ editData, onSubmitSuccess }) => {
                         {notice.content}
                       </p>
                     </div>
-                  </div>
-                  <div>
-                    <img
-                      src={formatMediaUrl(notice.fileUrl)|| "404image"}
-                      alt=""
-                      className="w-full h-64 object-cover object-center"
-                    />
+                    <div>
+                      <img
+                        src={formatMediaUrl(notice.fileUrl)}
+                        alt=""
+                        referrerPolicy="no-referrer"
+                        loading="lazy"
+                        className="w-full h-64 object-cover object-center"
+                      />
+                    </div>
                   </div>
                 </motion.div>
               )}

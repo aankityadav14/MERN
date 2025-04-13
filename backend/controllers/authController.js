@@ -127,3 +127,90 @@ exports.getAllAdmins = async (req, res) => {
     res.status(500).json({ message: "Error fetching admins", error });
   }
 };
+
+// ✅ Update Admin
+exports.updateAdmin = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { currentPassword, newPassword, ...otherUpdates } = req.body;
+
+    // First find the admin
+    const admin = await User.findById(id);
+    if (!admin) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'Admin not found'
+      });
+    }
+
+    // If password update is requested
+    if (newPassword) {
+      // Verify current password first
+      const isPasswordValid = await bcrypt.compare(currentPassword, admin.password);
+      if (!isPasswordValid) {
+        return res.status(401).json({
+          status: 'error',
+          message: 'Current password is incorrect'
+        });
+      }
+
+      // Hash new password
+      otherUpdates.password = await bcrypt.hash(newPassword, 10);
+    }
+
+    // Update admin with new data
+    const updatedAdmin = await User.findByIdAndUpdate(
+      id,
+      { $set: otherUpdates },
+      { new: true, runValidators: true }
+    );
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Admin updated successfully',
+      data: {
+        user: {
+          id: updatedAdmin._id,
+          name: updatedAdmin.name,
+          email: updatedAdmin.email,
+          role: updatedAdmin.role
+        }
+      }
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      status: 'error',
+      message: 'Error updating admin',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
+// ✅ Delete Admin
+exports.deleteAdmin = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const deletedAdmin = await User.findByIdAndDelete(id);
+
+    if (!deletedAdmin) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'Admin not found'
+      });
+    }
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Admin deleted successfully'
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      status: 'error',
+      message: 'Error deleting admin',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};

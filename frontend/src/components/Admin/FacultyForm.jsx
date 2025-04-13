@@ -4,6 +4,8 @@ import { toast } from 'react-toastify';
 import { FiUpload, FiEdit2, FiPlus, FiMail, FiPhone, FiExternalLink, FiTrash2, FiChevronDown, FiChevronUp, FiX, FiCheck, FiAlertCircle } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTheme } from '../../context/ThemeContext';
+import { facultyAPI, showDeleteConfirmation } from '../../api/privateapi';
+import Swal from 'sweetalert2';
 
 // Modal Component
 const Modal = ({ isOpen, onClose, children }) => {
@@ -69,25 +71,12 @@ const FacultyForm = () => {
 
  const fetchRecords = async () => {
      try {
-       const token = localStorage.getItem('token');
-       
-       if (!token) {
-         toast.error("No authentication token found");
-         return;
-       }
-   
-       const config = {
-         headers: {
-           'Authorization': `Bearer ${token}`
-         }
-       };
-   
-       const response = await axios.get("http://localhost:5000/api/faculty", config);
-       setRecords(response.data);
-     } catch (error) {
-       console.error('Error fetching faculty:', error);
-       toast.error(error.response?.data?.message || "Failed to fetch faculty records");
-     }
+        const data = await facultyAPI.getAllFaculty();
+        setRecords(data);
+    } catch (error) {
+        console.error('Error fetching faculty:', error);
+        toast.error(error.response?.data?.message || "Failed to fetch faculty records");
+    }
    };
 
   useEffect(() => {
@@ -115,44 +104,25 @@ const FacultyForm = () => {
 
   const handleSubmit = async (e) => {
       e.preventDefault();
+      setIsLoading(true);
   
       const facultyFormData = new FormData();
       facultyFormData.append('name', formData.name);
       facultyFormData.append('designation', formData.designation);
       facultyFormData.append('department', formData.department);
       facultyFormData.append('email', formData.email);
-      facultyFormData.append('phone', formData.phone); // Add phone field
+      facultyFormData.append('phone', formData.phone);
       if (formData.media) {
-        facultyFormData.append('image', formData.media); // Changed from 'media' to 'image'
+        facultyFormData.append('image', formData.media);
       }
-  
-      const token = localStorage.getItem('token');
   
       try {
         if (editData?._id) {
-          await axios.put(
-            `http://localhost:5000/api/faculty/${editData._id}`,
-            facultyFormData,
-            {
-              headers: {
-                'Content-Type': 'multipart/form-data',
-                Authorization: `Bearer ${token}`,
-              },
-            }
-          );
-          toast.success('Faculty updated successfully');
+            await facultyAPI.updateFaculty(editData._id, facultyFormData);
+            toast.success('Faculty updated successfully');
         } else {
-          await axios.post(
-            'http://localhost:5000/api/faculty',
-            facultyFormData,
-            {
-              headers: {
-                'Content-Type': 'multipart/form-data',
-                Authorization: `Bearer ${token}`,
-              },
-            }
-          );
-          toast.success('Faculty created successfully');
+            await facultyAPI.createFaculty(facultyFormData);
+            toast.success('Faculty created successfully');
         }
   
         setFormData({
@@ -160,7 +130,7 @@ const FacultyForm = () => {
           designation: '',
           department: '',
           email: '',
-          phone: '', // Add phone field
+          phone: '',
           media: null
         });
         setIsModalOpen(false);
@@ -168,6 +138,8 @@ const FacultyForm = () => {
       } catch (error) {
         toast.error(error.response?.data?.message || 'Error processing request');
         console.error('Error:', error);
+      } finally {
+        setIsLoading(false);
       }
     };
   
@@ -187,20 +159,14 @@ const FacultyForm = () => {
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm('Are you sure you want to delete this faculty?')) {
-      try {
-        const token = localStorage.getItem('token');
-        await axios.delete(`http://localhost:5000/api/faculty/${id}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        toast.success('Faculty deleted successfully');
-        fetchRecords();
-      } catch (error) {
-        toast.error(error.response?.data?.message || 'Failed to delete faculty');
-        console.error('Error:', error);
-      }
+    if (await showDeleteConfirmation('faculty member')) {
+        try {
+            await facultyAPI.deleteFaculty(id);
+            toast.success("Faculty deleted successfully");
+            fetchRecords();
+        } catch (error) {
+            toast.error(error.response?.data?.message || "Failed to delete faculty");
+        }
     }
   };
 

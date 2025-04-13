@@ -17,6 +17,8 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { useTheme } from "../../context/ThemeContext";
 import Masonry from 'react-masonry-css';
+import { galleryAPI, showDeleteConfirmation } from '../../api/privateapi';
+import Swal from 'sweetalert2';
 
 // Modal Component with updated styling
 const Modal = ({ isOpen, onClose, children }) => {
@@ -83,8 +85,8 @@ const GalleryForm = () => {
 
   const fetchGalleryItems = async () => {
     try {
-      const response = await axios.get("http://localhost:5000/api/gallery");
-      setGalleryItems(response.data);
+      const data = await galleryAPI.getAllGalleryItems();
+      setGalleryItems(data);
     } catch (error) {
       toast.error("Failed to fetch gallery items");
     }
@@ -104,7 +106,6 @@ const GalleryForm = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const token = localStorage.getItem("token");
 
     const formData = new FormData();
     formData.append("title", galleryData.title);
@@ -115,24 +116,10 @@ const GalleryForm = () => {
 
     try {
       if (editData?._id) {
-        await axios.put(
-          `http://localhost:5000/api/gallery/${editData._id}`,
-          formData,
-          {
-            headers: {
-              "Content-Type": "multipart/form-data",
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+        await galleryAPI.updateGalleryItem(editData._id, formData);
         toast.success("Gallery item updated successfully");
       } else {
-        await axios.post("http://localhost:5000/api/gallery", formData, {
-          headers: {
-            "Content-Type": "multipart/form-data",
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        await galleryAPI.createGalleryItem(formData);
         toast.success("Gallery item added successfully");
       }
 
@@ -155,14 +142,9 @@ const GalleryForm = () => {
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm("Are you sure you want to delete this item?")) {
+    if (await showDeleteConfirmation('gallery item')) {
       try {
-        const token = localStorage.getItem("token");
-        await axios.delete(`http://localhost:5000/api/gallery/${id}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        await galleryAPI.deleteGalleryItem(id);
         toast.success("Gallery item deleted successfully");
         fetchGalleryItems();
       } catch (error) {

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import { getAllEvents } from '../../api/publicapi';
 
 const Events = () => {
   const [events, setEvents] = useState([]);
@@ -8,9 +9,9 @@ const Events = () => {
   useEffect(() => {
     const fetchEvents = async () => {
       try {
-        const response = await axios.get("http://localhost:5000/api/events");
-        console.log(response.data);
-        setEvents(response.data);
+        const data = await getAllEvents();
+        console.log(data);
+        setEvents(data);
       } catch (error) {
         console.error("Error fetching events", error);
       } finally {

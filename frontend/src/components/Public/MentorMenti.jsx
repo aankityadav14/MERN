@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import axios from "axios";
 import { FaUserTie, FaUsers, FaSearch, FaArrowRight } from "react-icons/fa";
 import { useTheme } from "../../context/ThemeContext";
+import { getMentorMenteeData } from '../../api/publicapi';
 
 const MentorMenti = () => {
   const { isDarkMode } = useTheme();
@@ -15,8 +16,8 @@ const MentorMenti = () => {
   useEffect(() => {
     const fetchMentorMentees = async () => {
       try {
-        const response = await axios.get("http://localhost:5000/api/mentor-mentee");
-        setMentorMentees(response.data);
+        const data = await getMentorMenteeData();
+        setMentorMentees(data);
         setError(null);
       } catch (err) {
         setError("Failed to load mentor-mentee data");

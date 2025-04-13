@@ -3,6 +3,8 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import { FiEdit2, FiTrash2, FiChevronDown, FiChevronUp, FiUpload } from 'react-icons/fi';
 import { useTheme } from '../../context/ThemeContext';
+import { academicAPI, showDeleteConfirmation } from '../../api/privateapi';
+import Swal from 'sweetalert2';
 
 // Modal Component
 const Modal = ({ isOpen, onClose, children }) => {
@@ -62,8 +64,8 @@ const AcademicForm = () => {
 
   const fetchResources = async () => {
     try {
-      const response = await axios.get("http://localhost:5000/api/academic");
-      setResources(response.data);
+      const data = await academicAPI.getAllResources();
+      setResources(data);
     } catch (error) {
       toast.error("Failed to fetch academic resources");
     }
@@ -83,7 +85,6 @@ const AcademicForm = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const token = localStorage.getItem("token");
 
     const academicFormData = new FormData();
     Object.keys(formData).forEach((key) => {
@@ -96,28 +97,10 @@ const AcademicForm = () => {
 
     try {
       if (editData?._id) {
-        await axios.put(
-          `http://localhost:5000/api/academic/${editData._id}`,
-          academicFormData,
-          {
-            headers: {
-              "Content-Type": "multipart/form-data",
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+        await academicAPI.updateResource(editData._id, academicFormData);
         toast.success("Academic resource updated successfully");
       } else {
-        await axios.post(
-          "http://localhost:5000/api/academic",
-          academicFormData,
-          {
-            headers: {
-              "Content-Type": "multipart/form-data",
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+        await academicAPI.createResource(academicFormData);
         toast.success("Academic resource added successfully");
       }
 
@@ -150,14 +133,9 @@ const AcademicForm = () => {
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm("Are you sure you want to delete this resource?")) {
+    if (await showDeleteConfirmation('academic resource')) {
       try {
-        const token = localStorage.getItem("token");
-        await axios.delete(`http://localhost:5000/api/academic/${id}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        await academicAPI.deleteResource(id);
         toast.success("Resource deleted successfully");
         fetchResources();
       } catch (error) {
