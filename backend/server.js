@@ -13,6 +13,7 @@ const timeTableRoutes = require("./routes/timeTableRoutes");
 const alumniRoutes = require("./routes/alumniRoutes");
 const academicRoutes = require("./routes/AcademicRoutes");
 const mentorMenteeRoutes = require('./routes/mentorMenteeRoutes');
+const achievementRoutes = require("./routes/achievementRoutes");
 const app = express();
 
 // Middleware
@@ -29,6 +30,7 @@ app.use("/api/timetable", timeTableRoutes);
 app.use("/api/alumni", alumniRoutes);
 app.use("/api/academic", academicRoutes);
 app.use('/api/mentor-mentee', mentorMenteeRoutes);
+app.use("/api/achievements", achievementRoutes);
 
 // MongoDB Connection
 mongoose

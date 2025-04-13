@@ -3,16 +3,20 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import { FiUserPlus, FiUpload, FiEdit2, FiTrash2 } from "react-icons/fi";
 import { FiChevronDown, FiChevronUp } from 'react-icons/fi';
+import { useTheme } from '../../context/ThemeContext';
 
 // Modal Component
 const Modal = ({ isOpen, onClose, children }) => {
+  const { isDarkMode } = useTheme();
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
       <div className="flex items-center justify-center min-h-screen px-4">
         <div className="fixed inset-0 bg-gray-500 bg-opacity-75" onClick={onClose}></div>
-        <div className="relative bg-white rounded-lg p-8 max-w-4xl w-full">
+        <div className={`relative rounded-2xl p-8 max-w-4xl w-full shadow-2xl ${
+          isDarkMode ? 'bg-gray-800 text-gray-100' : 'bg-white text-gray-900'
+        }`}>
           <button
             className="absolute top-4 right-4 text-gray-400 hover:text-gray-500"
             onClick={onClose}
@@ -27,6 +31,7 @@ const Modal = ({ isOpen, onClose, children }) => {
 };
 
 const MentorMenteeForm = () => {
+  const { isDarkMode } = useTheme();
   const [records, setRecords] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editData, setEditData] = useState(null);
@@ -190,13 +195,18 @@ const MentorMenteeForm = () => {
   };
 
   return (
-    <div className="container mx-auto p-4">
+    <div className={`container mx-auto p-4 min-h-screen transition-colors duration-200 ${
+      isDarkMode ? 'bg-gray-900 text-gray-100' : 'bg-gray-50 text-gray-900'
+    }`}>
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Mentor-Mentee Management</h1>
+        <h1 className={`text-2xl font-bold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
+          Mentor-Mentee Management
+        </h1>
         <button
           onClick={handleCreateNew}
-          className="bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700"
+          className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all flex items-center gap-2"
         >
+          <FiUserPlus className="text-xl" />
           Create New Record
         </button>
       </div>
@@ -206,64 +216,80 @@ const MentorMenteeForm = () => {
         {records.map((record) => (
           <div
             key={record._id}
-            className="bg-gray-50 p-4 rounded-lg hover:bg-gray-100 transition duration-150"
+            className={`rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-all ${
+              isDarkMode ? 'bg-gray-800' : 'bg-white'
+            }`}
           >
-            {/* Header Section */}
             <div 
-              className="flex justify-between items-center cursor-pointer"
+              className="p-6 cursor-pointer"
               onClick={() => setExpandedRecord(expandedRecord === record._id ? null : record._id)}
             >
-              <div className="flex flex-col">
-                <span className="font-medium">{record.mentorName}</span>
-                <span className="text-sm text-gray-600">
-                  {record.department} - {record.semester} ({record.academicYear})
-                </span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <button
-                  className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600 flex items-center"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleEdit(record);
-                  }}
-                >
-                  <FiEdit2 className="inline mr-1" /> Edit
-                </button>
-                <button
-                  className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 flex items-center"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDelete(record._id);
-                  }}
-                >
-                  <FiTrash2 className="inline mr-1" /> Delete
-                </button>
-                {expandedRecord === record._id ? <FiChevronUp /> : <FiChevronDown />}
+              <div className="flex justify-between items-center">
+                <div className="flex flex-col">
+                  <span className={`font-medium ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
+                    {record.mentorName}
+                  </span>
+                  <span className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>
+                    {record.department} - {record.semester} ({record.academicYear})
+                  </span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <button
+                    className="p-2 text-blue-400 hover:bg-blue-700 rounded-lg transition-colors"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleEdit(record);
+                    }}
+                  >
+                    <FiEdit2 className="text-xl" />
+                  </button>
+                  <button
+                    className="p-2 text-red-400 hover:bg-red-700 rounded-lg transition-colors"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDelete(record._id);
+                    }}
+                  >
+                    <FiTrash2 className="text-xl" />
+                  </button>
+                  {expandedRecord === record._id ? <FiChevronUp className="text-xl" /> : <FiChevronDown className="text-xl" />}
+                </div>
               </div>
             </div>
 
-            {/* Expanded Content */}
             {expandedRecord === record._id && (
-              <div className="mt-4 border-t pt-4">
+              <div className={`mt-4 border-t ${
+                isDarkMode ? 'border-gray-700' : 'border-gray-200'
+              } pt-4 px-6 pb-6`}>
                 <div className="grid md:grid-cols-2 gap-6">
-                  {/* Mentees List */}
                   <div>
-                    <h3 className="font-semibold mb-3">Mentees List</h3>
-                    <div className="space-y-2">
+                    <h3 className={`text-lg font-semibold mb-4 ${
+                      isDarkMode ? 'text-gray-100' : 'text-gray-900'
+                    }`}>
+                      Mentees List
+                    </h3>
+                    <div className="space-y-3">
                       {record.mentees.map((mentee, index) => (
-                        <div key={index} className="text-sm bg-white p-2 rounded border">
-                          <span className="font-medium">{mentee.name}</span> - {mentee.rollNo}
+                        <div key={index} className={`p-3 rounded-lg ${
+                          isDarkMode ? 'bg-gray-700' : 'bg-gray-100'
+                        }`}>
+                          <span className={`font-medium ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
+                            {mentee.name}
+                          </span>
+                          <span className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>
+                            {' - '}{mentee.rollNo}
+                          </span>
                         </div>
                       ))}
                     </div>
                   </div>
 
-                  {/* Document Preview */}
                   <div>
                     {record.mediaUrl && (
                       <div>
-                        <h3 className="font-semibold mb-3">Attached Document</h3>
-                        {record.mediaUrl.toLowerCase().endsWith('.pdf') || 
+                        <h3 className="text-lg font-semibold mb-4">Attached Document</h3>
+                        <div className="bg-gray-700 p-4 rounded-xl">
+                          {record.mediaUrl.toLowerCase().endsWith('.pdf') || 
                          getGoogleDriveFileId(record.mediaUrl) ? (
                           <div className="bg-white p-2 rounded border">
                             <iframe
@@ -282,13 +308,13 @@ const MentorMenteeForm = () => {
                                 : `http://localhost:5000/${record.mediaUrl}`}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="mt-2 text-blue-600 hover:underline flex items-center justify-center"
+                              className="mt-3 inline-flex items-center text-blue-400 hover:text-blue-300"
                             >
-                              <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                              Open Document
+                              <svg className="w-4 h-4 ml-2" fill="currentColor" viewBox="0 0 20 20">
                                 <path d="M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z" />
                                 <path d="M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z" />
                               </svg>
-                              Open Document
                             </a>
                           </div>
                         ) : (
@@ -300,6 +326,7 @@ const MentorMenteeForm = () => {
                             />
                           </div>
                         )}
+                        </div>
                       </div>
                     )}
                   </div>
@@ -312,8 +339,10 @@ const MentorMenteeForm = () => {
 
       {/* Form Modal */}
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
-        <h2 className="text-2xl font-bold mb-4">
-          {editData ? "Edit Mentor-Mentee Record" : "Create New Mentor-Mentee Record"}
+        <h2 className={`text-2xl font-bold mb-6 ${
+          isDarkMode ? 'text-gray-100' : 'text-gray-900'
+        }`}>
+          {editData ? "Edit Record" : "Create New Record"}
         </h2>
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid md:grid-cols-2 gap-6">
@@ -326,7 +355,11 @@ const MentorMenteeForm = () => {
                 name="mentorName"
                 value={formData.mentorName}
                 onChange={handleChange}
-                className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-purple-500"
+                className={`w-full px-4 py-3 rounded-xl border focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${
+                  isDarkMode 
+                    ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                    : 'bg-white border-gray-300 text-gray-900'
+                }`}
                 required
               />
             </div>
@@ -340,7 +373,11 @@ const MentorMenteeForm = () => {
                 name="department"
                 value={formData.department}
                 onChange={handleChange}
-                className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-purple-500"
+                className={`w-full px-4 py-3 rounded-xl border focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${
+                  isDarkMode 
+                    ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                    : 'bg-white border-gray-300 text-gray-900'
+                }`}
                 required
               />
             </div>
@@ -353,7 +390,11 @@ const MentorMenteeForm = () => {
                 name="semester"
                 value={formData.semester}
                 onChange={handleChange}
-                className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-purple-500"
+                className={`w-full px-4 py-3 rounded-xl border focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${
+                  isDarkMode 
+                    ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                    : 'bg-white border-gray-300 text-gray-900'
+                }`}
                 required
               >
                 {[1, 2, 3, 4, 5, 6].map((num) => (
@@ -374,7 +415,11 @@ const MentorMenteeForm = () => {
                 value={formData.academicYear}
                 onChange={handleChange}
                 placeholder="e.g., 2023-24"
-                className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-purple-500"
+                className={`w-full px-4 py-3 rounded-xl border focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${
+                  isDarkMode 
+                    ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                    : 'bg-white border-gray-300 text-gray-900'
+                }`}
                 required
               />
             </div>
@@ -401,7 +446,11 @@ const MentorMenteeForm = () => {
                   placeholder="Student Name"
                   value={mentee.name}
                   onChange={(e) => handleMenteeChange(index, "name", e.target.value)}
-                  className="flex-1 p-2 border rounded-lg focus:ring-2 focus:ring-purple-500"
+                  className={`flex-1 px-4 py-3 rounded-xl border focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${
+                    isDarkMode 
+                      ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                      : 'bg-white border-gray-300 text-gray-900'
+                  }`}
                   required
                 />
                 <input
@@ -409,7 +458,11 @@ const MentorMenteeForm = () => {
                   placeholder="Roll Number"
                   value={mentee.rollNo}
                   onChange={(e) => handleMenteeChange(index, "rollNo", e.target.value)}
-                  className="flex-1 p-2 border rounded-lg focus:ring-2 focus:ring-purple-500"
+                  className={`flex-1 px-4 py-3 rounded-xl border focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${
+                    isDarkMode 
+                      ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                      : 'bg-white border-gray-300 text-gray-900'
+                  }`}
                   required
                 />
                 {formData.mentees.length > 1 && (
@@ -433,7 +486,11 @@ const MentorMenteeForm = () => {
               type="file"
               onChange={handleFileChange}
               accept=".pdf,image/*"
-              className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-purple-500"
+              className={`w-full px-4 py-3 rounded-xl border focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${
+                isDarkMode 
+                  ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                  : 'bg-white border-gray-300 text-gray-900'
+              }`}
               required={!editData?._id}
             />
             <p className="mt-1 text-sm text-gray-500">

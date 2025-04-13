@@ -1,22 +1,27 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import axios from "axios";
-import { FiDownload, FiUser, FiUsers, FiBookOpen, FiCalendar } from "react-icons/fi";
+import { FaUserTie, FaUsers, FaSearch, FaArrowRight } from "react-icons/fa";
+import { useTheme } from "../../context/ThemeContext";
 
-const MentorMentee = () => {
+const MentorMenti = () => {
+  const { isDarkMode } = useTheme();
   const [mentorMentees, setMentorMentees] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedDepartment, setSelectedDepartment] = useState("");
 
   useEffect(() => {
     const fetchMentorMentees = async () => {
       try {
         const response = await axios.get("http://localhost:5000/api/mentor-mentee");
         setMentorMentees(response.data);
-        setLoading(false);
+        setError(null);
       } catch (err) {
-        console.error("Fetch error:", err);
         setError("Failed to load mentor-mentee data");
+        console.error("Error fetching mentor-mentee data:", err);
+      } finally {
         setLoading(false);
       }
     };
@@ -24,110 +29,179 @@ const MentorMentee = () => {
     fetchMentorMentees();
   }, []);
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500"></div>
-      </div>
-    );
-  }
+  const departments = [...new Set(mentorMentees.map(item => item.department))];
 
-  if (error) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50">
-        <div className="text-red-500 text-center">
-          <p className="text-xl font-semibold">{error}</p>
-          <p className="mt-2">Please try again later</p>
-        </div>
-      </div>
-    );
-  }
+  const filteredMentorMentees = mentorMentees.filter(item => {
+    const matchesSearch = searchQuery.toLowerCase() === "" ||
+      item.mentorName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.mentees.some(mentee => mentee.name.toLowerCase().includes(searchQuery.toLowerCase()));
+
+    const matchesDepartment = selectedDepartment === "" || item.department === selectedDepartment;
+
+    return matchesSearch && matchesDepartment;
+  });
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.5 }}
-      className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8"
-    >
-      <div className="max-w-7xl mx-auto">
-        <h1 className="text-3xl font-bold text-center text-gray-800 mb-12">
-          Mentor-Mentee System
-        </h1>
+    <div className={`min-h-screen py-12 ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
+      <div className="max-w-7xl mx-auto px-4">
+        {/* Header Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center mb-12"
+        >
+          <h1 className={`text-4xl font-bold mb-4 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+            Mentor-Mentee Program
+          </h1>
+          <p className={`text-lg ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+            Supporting student growth through dedicated mentorship
+          </p>
+        </motion.div>
 
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {mentorMentees.map((record) => (
-            <motion.div
-              key={record._id}
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ duration: 0.5 }}
-              className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300"
+        {/* Search and Filter Section */}
+        <div className={`mb-8 p-6 rounded-xl ${isDarkMode ? 'bg-gray-800' : 'bg-white'} shadow-lg`}>
+          <div className="grid md:grid-cols-2 gap-4">
+            {/* Search Input */}
+            <div className="relative">
+              <FaSearch className={`absolute left-4 top-1/2 transform -translate-y-1/2 ${
+                isDarkMode ? 'text-gray-400' : 'text-gray-500'
+              }`} />
+              <input
+                type="text"
+                placeholder="Search by mentor or mentee name..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className={`w-full pl-12 pr-4 py-3 rounded-lg ${
+                  isDarkMode 
+                    ? 'bg-gray-700 text-white border-gray-600 placeholder-gray-400' 
+                    : 'bg-gray-50 text-gray-900 border-gray-300'
+                } focus:ring-2 focus:ring-blue-500`}
+              />
+            </div>
+
+            {/* Department Filter */}
+            <select
+              value={selectedDepartment}
+              onChange={(e) => setSelectedDepartment(e.target.value)}
+              className={`w-full p-3 rounded-lg ${
+                isDarkMode 
+                  ? 'bg-gray-700 text-white border-gray-600' 
+                  : 'bg-gray-50 text-gray-900 border-gray-300'
+              } focus:ring-2 focus:ring-blue-500`}
             >
-              <div className="p-6">
-                <div className="flex items-center mb-4">
-                  <FiUser className="text-purple-500 text-xl mr-2" />
-                  <h2 className="text-xl font-semibold text-gray-800">
-                    {record.mentorName}
-                  </h2>
-                </div>
-
-                <div className="space-y-2 text-sm text-gray-600">
-                  <div className="flex items-center">
-                    <FiBookOpen className="mr-2" />
-                    <span>{record.department}</span>
-                  </div>
-                  <div className="flex items-center">
-                    <FiCalendar className="mr-2" />
-                    <span>{record.academicYear}</span>
-                  </div>
-                  <div className="flex items-center">
-                    <FiUsers className="mr-2" />
-                    <span>{record.mentees.length} Mentees</span>
-                  </div>
-                </div>
-
-                <div className="mt-4 pt-4 border-t border-gray-100">
-                  <h3 className="font-medium text-gray-700 mb-2">Mentees:</h3>
-                  <ul className="space-y-1 text-sm text-gray-600">
-                    {record.mentees.map((mentee, index) => (
-                      <li key={index} className="flex items-center">
-                        <span className="w-8 h-8 flex items-center justify-center bg-purple-100 text-purple-500 rounded-full mr-2">
-                          {mentee.name.charAt(0)}
-                        </span>
-                        {mentee.name} - {mentee.rollNo}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                {record.mediaUrl && (
-                  <div className="mt-4 pt-4 border-t border-gray-100">
-                    <a
-                      href={record.mediaUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center px-4 py-2 bg-purple-50 text-purple-700 rounded-lg hover:bg-purple-100 transition-colors duration-200"
-                    >
-                      <FiDownload className="mr-2" />
-                      <span>Download Document</span>
-                    </a>
-                  </div>
-                )}
-              </div>
-            </motion.div>
-          ))}
+              <option value="">All Departments</option>
+              {departments.map((dept) => (
+                <option key={dept} value={dept}>
+                  {dept}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
 
-        {mentorMentees.length === 0 && (
-          <div className="text-center text-gray-500 mt-12">
-            <FiUsers className="mx-auto text-4xl mb-4" />
-            <p>No mentor-mentee records available</p>
+        {/* Content Section */}
+        {loading ? (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className={`text-center py-12 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}
+          >
+            Loading mentor-mentee data...
+          </motion.div>
+        ) : error ? (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="text-center py-12 text-red-500"
+          >
+            {error}
+          </motion.div>
+        ) : filteredMentorMentees.length === 0 ? (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className={`text-center py-12 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}
+          >
+            No mentor-mentee pairs found
+          </motion.div>
+        ) : (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredMentorMentees.map((item, index) => (
+              <motion.div
+                key={item._id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: index * 0.1 }}
+                className={`rounded-xl overflow-hidden shadow-lg ${
+                  isDarkMode ? 'bg-gray-800' : 'bg-white'
+                } transition-all duration-300`}
+              >
+                {/* Mentor Section */}
+                <div className={`p-6 border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+                  <div className="flex items-start gap-4">
+                    <div className={`p-3 rounded-lg ${
+                      isDarkMode ? 'bg-gray-700' : 'bg-blue-50'
+                    }`}>
+                      <FaUserTie className="text-2xl text-blue-600" />
+                    </div>
+                    <div>
+                      <h3 className={`text-lg font-semibold mb-1 ${
+                        isDarkMode ? 'text-white' : 'text-gray-900'
+                      }`}>
+                        {item.mentorName}
+                      </h3>
+                      <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                        {item.department}
+                      </p>
+                      <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                        {item.mentorEmail}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Mentees Section */}
+                <div className="p-6">
+                  <div className="flex items-center gap-2 mb-4">
+                    <FaUsers className="text-blue-600" />
+                    <h4 className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>
+                      Mentees ({item.mentees.length})
+                    </h4>
+                  </div>
+                  <div className="space-y-4">
+                    {item.mentees.map((mentee) => (
+                      <div
+                        key={mentee._id}
+                        className={`p-3 rounded-lg ${
+                          isDarkMode ? 'bg-gray-700' : 'bg-gray-50'
+                        }`}
+                      >
+                        <p className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                          {mentee.name}
+                        </p>
+                        <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                          Roll No: {mentee.rollNo}
+                        </p>
+                        
+                      </div>
+                     
+                      
+                    ))}
+                    <p className="flex items-center gap-1">
+                      <a href={item.mediaUrl} target="_blank" rel="noreferrer" className="text-blue-500">
+                        View Media
+                        <FaArrowRight className="inline-block ml-1" />
+                      </a>
+                    </p>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
           </div>
         )}
       </div>
-    </motion.div>
+    </div>
   );
 };
 
-export default MentorMentee;
+export default MentorMenti;

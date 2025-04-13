@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { FaFilePdf, FaFileWord, FaDownload } from "react-icons/fa";
+import { FaFilePdf, FaFileWord, FaDownload, FaFilter, FaTimes, FaBook } from "react-icons/fa";
+import { motion, AnimatePresence } from "framer-motion";
+import { useTheme } from "../../context/ThemeContext";
 
 const Academic = () => {
+  const { isDarkMode } = useTheme();
   const [academics, setAcademics] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -10,6 +13,7 @@ const Academic = () => {
   const [activeType, setActiveType] = useState('all');
   const [isYearFilterOpen, setIsYearFilterOpen] = useState(false);
   const [isTypeFilterOpen, setIsTypeFilterOpen] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
     const fetchAcademics = async () => {
@@ -26,9 +30,8 @@ const Academic = () => {
     };
 
     fetchAcademics();
-  }, []); // Remove dependency on filters since we'll filter client-side
+  }, []);
 
-  // Add this filtering function
   const getFilteredAcademics = () => {
     return academics.filter(academic => {
       const matchesYear = activeYear === 'all' || academic.year === activeYear;
@@ -37,10 +40,8 @@ const Academic = () => {
     });
   };
 
-  // Update the content section to use filtered results
   const filteredAcademics = getFilteredAcademics();
 
-  // Reset type filter when year changes
   const handleYearChange = (year) => {
     setActiveYear(year);
     setActiveType('all');
@@ -54,139 +55,166 @@ const Academic = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-indigo-50 py-12 px-4">
-      <div className="max-w-7xl mx-auto">
-        <h1 className="text-4xl font-bold text-center text-purple-800 mb-8">
-          Academic Resources
-        </h1>
+    <div className={`min-h-screen py-12 ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
+      <div className="max-w-7xl mx-auto px-4">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center mb-12"
+        >
+          <h1 className={`text-4xl font-bold mb-4 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+            Academic Resources
+          </h1>
+          <p className={`text-lg ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+            Access study materials, notes, and resources for your academic journey
+          </p>
+        </motion.div>
 
-        {/* Filters Section */}
-        <div className="bg-white rounded-2xl shadow-lg mb-1 flex ">
-          {/* Year Filter Accordion */}
-          <div className="p-4">
-            <button
-              onClick={() => setIsYearFilterOpen(!isYearFilterOpen)}
-              className="w-full flex items-center justify-between px-4 py-2 bg-gray-50 rounded-lg hover:bg-gray-100"
-            >
-              <span className="font-medium text-gray-700">Select Year</span>
-              <svg
-                className={`w-5 h-5 transition-transform duration-200 ${
-                  isYearFilterOpen ? 'transform rotate-180' : ''
-                }`}
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
+        <div className="mb-8">
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg mb-4 ${
+              isDarkMode 
+                ? 'bg-gray-800 text-white hover:bg-gray-700' 
+                : 'bg-white text-gray-700 hover:bg-gray-50'
+            } transition-colors duration-300`}
+          >
+            <FaFilter />
+            <span>Filter Resources</span>
+          </button>
+
+          <AnimatePresence>
+            {showFilters && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                className={`p-6 rounded-xl mb-6 ${
+                  isDarkMode ? 'bg-gray-800' : 'bg-white'
+                } shadow-lg`}
               >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </button>
-            {isYearFilterOpen && (
-              <div className="mt-4 space-y-2 px-4">
-                {['First Year', 'Second Year', 'Third Year', 'MSc Part 1', 'MSc Part 2'].map((year) => (
-                  <label key={year} className="flex items-center space-x-3 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="year"
-                      checked={activeYear === year}
-                      onChange={() => handleYearChange(year)}
-                      className="form-radio h-4 w-4 text-purple-600 transition duration-150 ease-in-out"
-                    />
-                    <span className="text-gray-700">{year}</span>
-                  </label>
-                ))}
-                <label className="flex items-center space-x-3 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="year"
-                    checked={activeYear === 'all'}
-                    onChange={() => handleYearChange('all')}
-                    className="form-radio h-4 w-4 text-purple-600 transition duration-150 ease-in-out"
-                  />
-                  <span className="text-gray-700">Show All</span>
-                </label>
-              </div>
-            )}
-          </div>
+                <div className="grid md:grid-cols-2 gap-6">
+                  {/* Year Filter */}
+                  <div>
+                    <label className={`block mb-2 font-medium ${
+                      isDarkMode ? 'text-gray-200' : 'text-gray-700'
+                    }`}>
+                      Select Year
+                    </label>
+                    <select
+                      value={activeYear}
+                      onChange={(e) => handleYearChange(e.target.value)}
+                      className={`w-full p-3 rounded-lg ${
+                        isDarkMode 
+                          ? 'bg-gray-700 text-white border-gray-600' 
+                          : 'bg-gray-50 text-gray-900 border-gray-300'
+                      } focus:ring-2 focus:ring-blue-500`}
+                    >
+                      <option value="">All Years</option>
+                      <option value="FY">First Year</option>
+                      <option value="SY">Second Year</option>
+                      <option value="TY">Third Year</option>
+                    </select>
+                  </div>
 
-          {/* Type Filter Accordion */}
-          <div className="p-4">
-            <button
-              onClick={() => setIsTypeFilterOpen(!isTypeFilterOpen)}
-              className="w-full flex items-center justify-between px-4 py-2 bg-gray-50 rounded-lg hover:bg-gray-100"
-            >
-              <span className="font-medium text-gray-700">Resource Type</span>
-              <svg
-                className={`w-5 h-5 transition-transform duration-200 ${
-                  isTypeFilterOpen ? 'transform rotate-180' : ''
-                }`}
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </button>
-            {isTypeFilterOpen && (
-              <div className="mt-4 space-y-2 px-4">
-                {[
-                  { id: 'all', label: 'All Resources' },
-                  { id: 'syllabus', label: 'Syllabus' },
-                  { id: 'notes', label: 'Notes' }
-                ].map((type) => (
-                  <label key={type.id} className="flex items-center space-x-3 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="type"
-                      checked={activeType === type.id}
-                      onChange={() => setActiveType(type.id)}
-                      className="form-radio h-4 w-4 text-purple-600 transition duration-150 ease-in-out"
-                    />
-                    <span className="text-gray-700">{type.label}</span>
-                  </label>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
+                  {/* Type Filter */}
+                  <div>
+                    <label className={`block mb-2 font-medium ${
+                      isDarkMode ? 'text-gray-200' : 'text-gray-700'
+                    }`}>
+                      Resource Type
+                    </label>
+                    <select
+                      value={activeType}
+                      onChange={(e) => setActiveType(e.target.value)}
+                      className={`w-full p-3 rounded-lg ${
+                        isDarkMode 
+                          ? 'bg-gray-700 text-white border-gray-600' 
+                          : 'bg-gray-50 text-gray-900 border-gray-300'
+                      } focus:ring-2 focus:ring-blue-500`}
+                    >
+                      <option value="">All Types</option>
+                      <option value="notes">Notes</option>
+                      <option value="syllabus">Syllabus</option>
+                      <option value="question-papers">Question Papers</option>
+                    </select>
+                  </div>
+                </div>
 
-        {/* Active Filters Display */}
-        <div className="p-4  mb-6">
-          <div className="flex flex-wrap items-center justify-start gap-2">
-            <span className="text-sm text-gray-500 font-medium">Active Filters:</span>
-            <div className="flex flex-wrap justify-center gap-2">
-              <span className="px-3 py-1 text-sm rounded-full bg-purple-100 text-purple-600">
-                {activeYear === 'all' ? 'All Years' : activeYear}
-              </span>
-              <span className="px-3 py-1 text-sm rounded-full bg-purple-100 text-purple-600">
-                {activeType === 'all' ? 'All Types' : activeType.charAt(0).toUpperCase() + activeType.slice(1)}
-              </span>
-            </div>
-          </div>
+                {/* Active Filters */}
+                {(activeYear || activeType) && (
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {activeYear && (
+                      <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm ${
+                        isDarkMode 
+                          ? 'bg-gray-700 text-white' 
+                          : 'bg-gray-100 text-gray-700'
+                      }`}>
+                        {activeYear}
+                        <button
+                          onClick={() => handleYearChange('all')}
+                          className="hover:text-red-500"
+                        >
+                          <FaTimes />
+                        </button>
+                      </span>
+                    )}
+                    {activeType && (
+                      <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm ${
+                        isDarkMode 
+                          ? 'bg-gray-700 text-white' 
+                          : 'bg-gray-100 text-gray-700'
+                      }`}>
+                        {activeType}
+                        <button
+                          onClick={() => setActiveType('all')}
+                          className="hover:text-red-500"
+                        >
+                          <FaTimes />
+                        </button>
+                      </span>
+                    )}
+                  </div>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         {/* Error Message */}
         {error && (
-          <div className="text-red-600 text-center bg-red-100 p-3 rounded-lg mb-6">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="text-center py-12 text-red-500"
+          >
             {error}
-          </div>
+          </motion.div>
         )}
 
         {/* Content Section */}
         <div className="mt-8">
           {loading ? (
-            <div className="flex justify-center items-center h-40">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
-            </div>
-          ) : error ? (
-            <div className="text-red-600 text-center bg-red-100 p-3 rounded-lg mb-6">
-              {error}
-            </div>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className={`col-span-full text-center py-12 ${
+                isDarkMode ? 'text-gray-300' : 'text-gray-600'
+              }`}
+            >
+              Loading resources...
+            </motion.div>
           ) : filteredAcademics.length > 0 ? (
             <div className="grid lg:grid-cols-3 md:grid-cols-2 grid-cols-1 gap-6">
-              {filteredAcademics.map((academic) => (
-                <div
+              {filteredAcademics.map((academic, index) => (
+                <motion.div
                   key={academic._id}
-                  className="bg-white shadow-lg rounded-xl overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: index * 0.1 }}
+                  className={`bg-white shadow-lg rounded-xl overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 ${
+                    isDarkMode ? 'bg-gray-800 hover:bg-gray-700' : ''
+                  }`}
                 >
                   <div className="p-6">
                     <div className="flex items-center justify-between mb-3">
@@ -195,7 +223,9 @@ const Academic = () => {
                       </span>
                       <span className="text-sm text-gray-500 font-medium">{academic.year}</span>
                     </div>
-                    <h3 className="text-xl font-semibold text-gray-800 mb-2">
+                    <h3 className={`text-xl font-semibold text-gray-800 mb-2 ${
+                      isDarkMode ? 'text-white' : ''
+                    }`}>
                       {academic.title}
                     </h3>
                     <p className="text-gray-600 mb-4">Subject: {academic.subject}</p>
@@ -210,24 +240,28 @@ const Academic = () => {
                         href={academic.mediaUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition duration-300"
+                        className={`flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg hover:from-purple-700 hover:to-indigo-700 transition duration-300 ${
+                          isDarkMode ? 'bg-gray-700 hover:bg-gray-600' : ''
+                        }`}
                       >
                         <FaDownload />
                         <span>Download</span>
                       </a>
                     </div>
                   </div>
-                </div>
+                </motion.div>
               ))}
             </div>
           ) : (
-            <div className="text-center py-12">
-              <p className="text-gray-500 text-lg">
-                {activeYear === 'all' 
-                  ? 'Please select a year to view resources'
-                  : `No ${activeType === 'all' ? 'resources' : activeType} available for ${activeYear}`}
-              </p>
-            </div>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className={`col-span-full text-center py-12 ${
+                isDarkMode ? 'text-gray-300' : 'text-gray-600'
+              }`}
+            >
+              No resources found
+            </motion.div>
           )}
         </div>
       </div>

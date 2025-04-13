@@ -26,7 +26,7 @@ exports.createAcademic = async (req, res) => {
     }
 
     // Validate semester
-    const validSemesters = ['Semester 1', 'Semester 2'];
+    const validSemesters = ['Semester 1', 'Semester 2', 'Semester 3', 'Semester 4', 'semester 5', 'semester 6', 'part 1', 'part 2'];
     if (!validSemesters.includes(semester)) {
       return res.status(400).json({ message: "Invalid semester selection" });
     }

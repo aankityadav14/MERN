@@ -6,6 +6,7 @@ const {
   deleteFaculty 
 } = require("../controllers/facultyController");
 const authMiddleware = require("../middleware/authMiddleware");
+const isAdmin = require("../middleware/adminMiddleware");
 const multer = require("multer");
 
 const router = express.Router();
@@ -23,9 +24,9 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage: storage });
 
-router.post("/", upload.single("image"), authMiddleware, createFaculty);
+router.post("/", upload.single("image"), authMiddleware,isAdmin, createFaculty);
 router.get("/", getAllFaculty);
-router.put("/:id", upload.single("image"), authMiddleware, updateFaculty);
-router.delete("/:id", authMiddleware, deleteFaculty);
+router.put("/:id", upload.single("image"), authMiddleware,isAdmin, updateFaculty);
+router.delete("/:id", authMiddleware,isAdmin, deleteFaculty);
 
 module.exports = router;

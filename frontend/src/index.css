@@ -1,1 +1,16 @@
 @import "tailwindcss";
+.my-masonry-grid {
+    display: flex;
+    margin-left: -30px;
+    width: auto;
+  }
+  
+  .my-masonry-grid_column {
+    padding-left: 30px;
+    background-clip: padding-box;
+  }
+  
+  /* Optional: Style item wrapper */
+  .my-masonry-grid_column > div {
+    margin-bottom: 30px;
+  }

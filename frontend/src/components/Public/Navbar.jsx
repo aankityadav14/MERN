@@ -1,116 +1,231 @@
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { FaBars, FaTimes, FaUserCircle } from "react-icons/fa";
-import logo1 from "../../assets/CollogeLogo.png";
+import { useState, useEffect } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
+import { FaBars, FaTimes, FaUserCircle, FaHome, FaBullhorn, FaClock, FaBook, FaImages, FaUserFriends, FaGraduationCap } from "react-icons/fa";
 import { CiLogin } from "react-icons/ci";
+import { useTheme } from "../../context/ThemeContext";
+import logo1 from "../../assets/CollogeLogo.png";
 
 const Navbar = () => {
+  const { isDarkMode } = useTheme();
   const [isOpen, setIsOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
   const token = localStorage.getItem("token");
+
+  // Handle scroll effect
+  useEffect(() => {
+    const handleScroll = () => {
+      const offset = window.scrollY;
+      if (offset > 50) {
+        setScrolled(true);
+      } else {
+        setScrolled(false);
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, []);
+
+  // Close mobile menu when route changes
+  useEffect(() => {
+    setIsOpen(false);
+  }, [location]);
 
   const handleUserClick = () => {
     if (token) {
-      navigate("/dashboard"); // Redirect to dashboard if logged in
+      navigate("/dashboard");
     } else {
-      navigate("/login"); // Redirect to login if not logged in
+      navigate("/login");
     }
   };
 
+  const navItems = [
+    { name: "Home", path: "/", icon: FaHome },
+    { name: "Notice", path: "/notice", icon: FaBullhorn },
+    { name: "Time-Table", path: "/timetable", icon: FaClock },
+    { name: "Academic", path: "/academic", icon: FaBook },
+    { name: "Gallery", path: "/gallery", icon: FaImages },
+    { name: "Mentor-Mentee", path: "/mentor-mentee", icon: FaUserFriends },
+    { name: "Alumni", path: "/alumni", icon: FaGraduationCap },
+  ];
+
   return (
-    <header className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg fixed w-full top-0 z-50">
-      <div className="container mx-auto px-4 py-3 flex items-center justify-between">
-        {/* College Logo and Title */}
-        <div className="flex items-center gap-3">
-          <img src={logo1} alt="College Logo" className="h-10 w-auto" />
-          <h1 className="text-xl font-bold uppercase tracking-wide">
-            IT Department
-          </h1>
-        </div>
+    <header 
+      className={`sticky top-0 w-full z-50 transition-all duration-300 ${
+        scrolled 
+          ? isDarkMode 
+            ? "bg-gray-900 shadow-lg shadow-gray-800/50" 
+            : "bg-white shadow-lg"
+          : isDarkMode
+            ? "bg-gradient-to-r from-blue-900 to-indigo-900"
+            : "bg-gradient-to-r from-blue-600 to-indigo-600"
+      }`}
+    >
+      <div className="container mx-auto px-4">
+        <div className="flex items-center justify-between h-16 md:h-20">
+          {/* Logo and Title */}
+          <Link to="/" className="flex items-center space-x-3">
+            <img src={logo1} alt="College Logo" className="h-10 w-auto" />
+            <h1 className={`text-xl font-bold uppercase tracking-wide ${
+              scrolled 
+                ? isDarkMode ? "text-white" : "text-gray-800"
+                : "text-white"
+            }`}>
+              IT Department
+            </h1>
+          </Link>
 
-        {/* Desktop Navigation */}
-        <nav className="hidden md:flex gap-6">
-          {[
-            { name: "Home", path: "/" },
-            { name: "Events", path: "/events" },
-            { name: "Notice", path: "/notice" },
-            { name: "Time-Table", path: "/timetable" },
-            { name: "Academic", path: "/academic" },
-            { name: "Gallery", path: "/gallery" },
-            { name: "Mentor-Mentee", path: "/mentor-mentee" },
-            { name: "Alumni", path: "/alumni" },
-          ].map((item, index) => (
-            <Link
-              key={index}
-              to={item.path}
-              className="relative group font-semibold transition-all duration-300"
-            >
-              {item.name}
-              <span className="absolute left-0 bottom-[-2px] h-[2px] w-0 bg-white transition-all duration-300 group-hover:w-full"></span>
-            </Link>
-          ))}
-          {token ? (
-            <button className="text-white" onClick={handleUserClick}>
-              <FaUserCircle size={24} />
-            </button>
-          ) : (
-            <Link to="/login">
-              <button className="text-white">
-                <CiLogin size={20} />
+          {/* Desktop Navigation */}
+          <nav className="hidden lg:flex items-center space-x-8">
+            {navItems.map((item) => (
+              <Link
+                key={item.name}
+                to={item.path}
+                className={`relative group flex items-center space-x-2 font-medium transition-colors duration-300 ${
+                  scrolled 
+                    ? isDarkMode
+                      ? "text-gray-300 hover:text-white"
+                      : "text-gray-700 hover:text-blue-600"
+                    : "text-white hover:text-blue-200"
+                }`}
+              >
+                <item.icon className="text-lg" />
+                <span>{item.name}</span>
+                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-current transition-all duration-300 group-hover:w-full"></span>
+              </Link>
+            ))}
+            {token ? (
+              <button
+                onClick={handleUserClick}
+                className={`p-2 rounded-full transition-colors duration-300 ${
+                  scrolled 
+                    ? isDarkMode
+                      ? "text-gray-300 hover:bg-gray-800"
+                      : "text-gray-700 hover:bg-gray-100"
+                    : "text-white hover:bg-white/10"
+                }`}
+              >
+                <FaUserCircle size={24} />
               </button>
-            </Link>
-          )}
-        </nav>
+            ) : (
+              <Link to="/login">
+                <button
+                  className={`p-2 rounded-full transition-colors duration-300 ${
+                    scrolled 
+                      ? isDarkMode
+                        ? "text-gray-300 hover:bg-gray-800"
+                        : "text-gray-700 hover:bg-gray-100"
+                      : "text-white hover:bg-white/10"
+                  }`}
+                >
+                  <CiLogin size={24} />
+                </button>
+              </Link>
+            )}
+          </nav>
 
-        {/* Mobile Menu Button */}
-        <button
-          className="md:hidden text-white text-3xl focus:outline-none"
-          onClick={() => setIsOpen(!isOpen)}
-        >
-          {isOpen ? <FaTimes /> : <FaBars />}
-        </button>
+          {/* Mobile Menu Button */}
+          <button
+            className={`lg:hidden p-2 rounded-lg transition-colors duration-300 ${
+              scrolled 
+                ? isDarkMode
+                  ? "text-gray-300 hover:bg-gray-800"
+                  : "text-gray-700 hover:bg-gray-100"
+                : "text-white hover:bg-white/10"
+            }`}
+            onClick={() => setIsOpen(!isOpen)}
+          >
+            {isOpen ? <FaTimes size={24} /> : <FaBars size={24} />}
+          </button>
+        </div>
       </div>
 
       {/* Mobile Navigation Menu */}
       <div
-        className={`md:hidden fixed inset-0 bg-black bg-opacity-50 z-40 transition-opacity duration-300 ${
+        className={`lg:hidden fixed inset-0 bg-black bg-opacity-50 transition-opacity duration-300 ${
           isOpen ? "opacity-100 visible" : "opacity-0 invisible"
         }`}
         onClick={() => setIsOpen(false)}
       ></div>
 
       <div
-        className={`md:hidden fixed top-0 right-0 h-full w-64 bg-white shadow-lg transform ${
+        className={`lg:hidden fixed top-0 right-0 h-full w-72 shadow-xl transform transition-transform duration-300 ease-in-out ${
+          isDarkMode ? "bg-gray-900" : "bg-white"
+        } ${
           isOpen ? "translate-x-0" : "translate-x-full"
-        } transition-transform duration-300 z-50`}
+        }`}
       >
-        <button
-          className="absolute top-4 right-4 text-gray-800 text-3xl"
-          onClick={() => setIsOpen(false)}
-        >
-          <FaTimes />
-        </button>
+        <div className={`flex items-center justify-between p-4 border-b ${
+          isDarkMode ? "border-gray-700" : "border-gray-200"
+        }`}>
+          <h2 className={`text-xl font-bold ${
+            isDarkMode ? "text-white" : "text-gray-800"
+          }`}>Menu</h2>
+          <button
+            className={`p-2 rounded-lg transition-colors duration-300 ${
+              isDarkMode 
+                ? "hover:bg-gray-800 text-gray-400"
+                : "hover:bg-gray-100 text-gray-600"
+            }`}
+            onClick={() => setIsOpen(false)}
+          >
+            <FaTimes size={24} />
+          </button>
+        </div>
 
-        <nav className="mt-16 flex flex-col gap-6 text-center">
-          {[
-            { name: "Home", path: "/" },
-            { name: "Events", path: "/events" },
-            { name: "Notice", path: "/notice" },
-            { name: "Time-Table", path: "/timetable" },
-            { name: "Academic", path: "/academic" },
-            { name: "Gallery", path: "/gallery" },
-            { name: "Mentor-Mentee", path: "/mentor-mentee" },
-            { name: "Alumni", path: "/alumni" },
-          ].map((item, index) => (
+        <nav className="p-4 space-y-2">
+          {navItems.map((item) => (
             <Link
-              key={index}
+              key={item.name}
               to={item.path}
-              className="text-gray-800 text-lg font-semibold hover:text-blue-600 transition-all duration-300"
+              className={`flex items-center space-x-3 p-3 rounded-lg transition-colors duration-300 ${
+                location.pathname === item.path
+                  ? isDarkMode
+                    ? "bg-gray-800 text-blue-400"
+                    : "bg-blue-50 text-blue-600"
+                  : isDarkMode
+                    ? "text-gray-300 hover:bg-gray-800"
+                    : "text-gray-700 hover:bg-gray-50"
+              }`}
               onClick={() => setIsOpen(false)}
             >
-              {item.name}
+              <item.icon className="text-xl" />
+              <span className="font-medium">{item.name}</span>
             </Link>
           ))}
+          {token ? (
+            <button
+              onClick={() => {
+                handleUserClick();
+                setIsOpen(false);
+              }}
+              className={`w-full flex items-center space-x-3 p-3 rounded-lg transition-colors duration-300 ${
+                isDarkMode
+                  ? "text-gray-300 hover:bg-gray-800"
+                  : "text-gray-700 hover:bg-gray-50"
+              }`}
+            >
+              <FaUserCircle size={24} />
+              <span className="font-medium">Dashboard</span>
+            </button>
+          ) : (
+            <Link
+              to="/login"
+              className={`flex items-center space-x-3 p-3 rounded-lg transition-colors duration-300 ${
+                isDarkMode
+                  ? "text-gray-300 hover:bg-gray-800"
+                  : "text-gray-700 hover:bg-gray-50"
+              }`}
+              onClick={() => setIsOpen(false)}
+            >
+              <CiLogin size={24} />
+              <span className="font-medium">Login</span>
+            </Link>
+          )}
         </nav>
       </div>
     </header>

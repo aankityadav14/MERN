@@ -14,6 +14,10 @@ import {
   FaTrash,
   FaPlus,
   FaUsers,
+  FaChartLine,
+  FaCog,
+  FaBars,
+  FaTimes,
 } from "react-icons/fa";
 import FacultyForm from "./FacultyForm";
 import EventForm from "./EventForm";
@@ -23,66 +27,97 @@ import TimeTableForm from "./TimeTableForm";
 import AcademicForm from "./AcademicForm";
 import MentorMenteeForm from "./MentorMenteeForm";
 import Aluminia from "./Aluminia";
+import AchievementForm from "./AchievementForm";
+import UserForm from './UserForm';
 import axios from "axios";
+import { color } from "framer-motion";
+import { useTheme } from '../../context/ThemeContext';
 
 const Dashboard = () => {
-  const [activeTab, setActiveTab] = useState("faculty");
+  const { isDarkMode } = useTheme();
+  const [activeTab, setActiveTab] = useState("event");
   const [data, setData] = useState([]);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
   const [editData, setEditData] = useState(null);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const navigate = useNavigate();
-
+  const isadmin = localStorage.getItem("role") === "admin";
   const menuItems = [
-    {
-      id: "faculty",
-      label: "Faculty",
-      icon: <FaUserPlus />,
-      color: "bg-blue-500",
-    },
     {
       id: "event",
       label: "Events",
       icon: <FaCalendarPlus />,
-      color: "bg-green-500",
+      color: "from-green-500 to-green-600",
+      description: "Manage department events",
     },
     {
       id: "notice",
       label: "Notices",
       icon: <FaBell />,
-      color: "bg-yellow-500",
+      color: "from-yellow-500 to-yellow-600",
+      description: "Manage notices and announcements",
     },
     {
       id: "gallery",
       label: "Gallery",
       icon: <FaImages />,
-      color: "bg-purple-500",
+      color: "from-purple-500 to-purple-600",
+      description: "Manage photo gallery",
     },
     {
       id: "timetable",
       label: "Timetable",
       icon: <FaTable />,
-      color: "bg-indigo-500",
+      color: "from-indigo-500 to-indigo-600",
+      description: "Manage class schedules",
     },
     {
       id: "academic",
       label: "Academic",
       icon: <FaBook />,
-      color: "bg-pink-500",
+      color: "from-pink-500 to-pink-600",
+      description: "Manage academic information",
     },
     {
       id: "mentor-mentee",
       label: "Mentor-Mentee",
       icon: <FaUsers />,
-      color: "bg-orange-500",
+      color: "from-orange-500 to-orange-600",
+      description: "Manage mentor-mentee pairs",
     },
     {
-      id:"aluminia",
-      label:"Aluminia",
-      icon:<FaUsers/>,
-      color:"bg-red-500"
+      id: "aluminia",
+      label: "Alumni",
+      icon: <FaUsers />,
+      color: "from-red-500 to-red-600",
+      description: "Manage alumni information",
+    },
+    {
+      id:"achievement",
+      label:"Achievement",
+      icon:<FaChartLine />,
+      color: "from-red-500 to-red-600",
+      description:"Manage Achievement Information"
     }
-  ];
+  ].concat(
+    // Only add Users menu item if user is admin
+    isadmin ? [{
+      id: "users",
+      label: "Users",
+      icon: <FaCog />,
+      color: "from-teal-500 to-teal-600",
+      description: "Manage Users and Permissions"
+    },
+    {
+      id: "faculty",
+      label: "Faculty",
+      icon: <FaUserPlus />,
+      color: "from-blue-500 to-blue-600",
+      description: "Manage faculty members",
+    },
+  ] : []
+  );
 
   // useEffect(() => {
   //   fetchData();
@@ -132,189 +167,163 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen flex">
+    <div className={`min-h-screen ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
+      {/* Mobile Menu Button */}
+      <button
+        onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+        className={`lg:hidden fixed top-4 left-4 z-50 p-2 rounded-lg shadow-lg ${
+          isDarkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'
+        }`}
+      >
+        {isSidebarOpen ? <FaTimes /> : <FaBars />}
+      </button>
+
       {/* Sidebar */}
-      <div className="w-64 bg-gray-800 min-h-screen">
-        <div className="p-4">
-          <h1 className="text-white text-xl font-bold mb-6">Admin Dashboard</h1>
-        </div>
-        <nav className="space-y-2 px-2">
-          {menuItems.map((item) => (
+      <div
+        className={`fixed inset-y-0 left-0 z-40 w-80 shadow-lg transform transition-transform duration-300 ease-in-out ${
+          isDarkMode ? 'bg-gray-800' : 'bg-white'
+        } ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0`}
+      >
+        <div className="h-full flex flex-col">
+          {/* Logo and Title */}
+          <div className="p-6 bg-gradient-to-r from-blue-600 to-indigo-600">
+            <h1 className="text-white text-2xl font-bold">Admin Dashboard</h1>
+            <p className="text-blue-100 text-sm mt-1">IT Department</p>
+          </div>
+
+          {/* Navigation Menu */}
+          <nav className="flex-1 overflow-y-auto p-4 space-y-2">
+            {menuItems.map((item) => (
+              <button
+                key={item.id}
+                onClick={() => {
+                  setActiveTab(item.id);
+                  setIsSidebarOpen(false);
+                }}
+                className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-300 ${
+                  activeTab === item.id
+                    ? `bg-gradient-to-r ${item.color} text-white shadow-lg`
+                    : isDarkMode 
+                      ? 'text-gray-300 hover:bg-gray-700' 
+                      : 'text-gray-700 hover:bg-gray-100'
+                }`}
+              >
+                <span className="text-xl">{item.icon}</span>
+                <div className="flex flex-col items-start">
+                  <span className="font-medium">{item.label}</span>
+                  <span className="text-xs opacity-75">{item.description}</span>
+                </div>
+              </button>
+            ))}
+          </nav>
+
+          {/* Logout Button */}
+          <div className={`p-4 border-t ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
             <button
-              key={item.id}
-              onClick={() => setActiveTab(item.id)}
-              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition duration-300 ${
-                activeTab === item.id
-                  ? `${item.color} text-white`
-                  : "text-gray-300 hover:bg-gray-700"
-              }`}
+              onClick={handleLogout}
+              className="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-red-600 hover:bg-red-50 transition-colors duration-300"
             >
-              <span className="text-xl">{item.icon}</span>
-              <span>{item.label}</span>
+              <FaSignOutAlt />
+              <span>Logout</span>
             </button>
-          ))}
-          <button
-            onClick={handleLogout}
-            className="w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition duration-300 text-red-400 hover:bg-red-900 hover:text-red-200 mt-8"
-          >
-            <FaSignOutAlt />
-            <span>Logout</span>
-          </button>
-        </nav>
+          </div>
+        </div>
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 bg-gray-50">
+      <div className={`transition-all duration-300 ${isSidebarOpen ? "ml-0" : "lg:ml-80"}`}>
         <div className="p-8">
-          <div className="bg-white rounded-lg shadow-md">
-            <div className="p-6">
-              {/* Forms */}
-              {activeTab === "faculty" && (
-                <FacultyForm
-                  editData={editData}
-                  onSubmitSuccess={() => {
-                    // fetchData();
-                    setEditData(null);
-                  }}
-                />
-              )}
-              {activeTab === "event" && (
-                <EventForm
-                  editData={editData}
-                  onSubmitSuccess={() => {
-                    // fetchData();
-                    setEditData(null);
-                  }}
-                />
-              )}
-              {activeTab === "notice" && (
-                <NoticeForm
-                  editData={editData}
-                  onSubmitSuccess={() => {
-                    // fetchData();
-                    setEditData(null);
-                  }}
-                />
-              )}
-              {activeTab === "gallery" && (
-                <GalleryForm
-                  editData={editData}
-                  onSubmitSuccess={() => {
-                    // fetchData();
-                    setEditData(null);
-                  }}
-                />
-              )}
-              {activeTab === "timetable" && (
-                <TimeTableForm
-                  editData={editData}
-                  onSubmitSuccess={() => {
-                    // fetchData();
-                    setEditData(null);
-                  }}
-                />
-              )}
-              {activeTab === "academic" && (
-                <AcademicForm
-                  editData={editData}
-                  onSubmitSuccess={() => {
-                    // fetchData();
-                    setEditData(null);
-                  }}
-                />
-              )}
-              {activeTab === "mentor-mentee" && (
-                <MentorMenteeForm
-                  editData={editData}
-                  onSubmitSuccess={() => {
-                    // fetchData();
-                    setEditData(null);
-                  }}
-                />
-              )}
-              {activeTab === "aluminia" && (
-                <Aluminia
-                  editData={editData}
-                  onSubmitSuccess={() => {
-                    // fetchData();
-                    setEditData(null);
-                  }}
-                />
-              )}
-
-              {/* Data List */}
-              {/* <div className="mt-6 space-y-4">
-                {data.map((item) => (
-                  <div
-                    key={item._id}
-                    className="bg-gray-50 p-4 rounded-lg flex justify-between items-center hover:bg-gray-100 transition duration-150"
-                  >
-                    <div className="flex flex-col">
-                      <span className="font-medium">
-                        {item.mentorName ||
-                          item.facultyName ||
-                          item.title ||
-                          item.name}
-                      </span>
-                      {item.department && (
-                        <span className="text-sm text-gray-600">
-                          {item.department} -{" "}
-                          {item.semester || item.academicYear}
-                        </span>
-                      )}
-                    </div>
-                    <div className="space-x-2">
-                      <button
-                        className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600"
-                        onClick={() => handleUpdate(item)}
-                      >
-                        <FaEdit className="inline mr-1" /> Edit
-                      </button>
-                      <button
-                        className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
-                        onClick={() => {
-                          setSelectedItem(item);
-                          setShowDeleteModal(true);
-                        }}
-                      >
-                        <FaTrash className="inline mr-1" /> Delete
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div> */}
-            </div>
+          {/* Content Area */}
+          <div className={`rounded-2xl shadow-lg p-6 ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
+            {activeTab === "faculty" && isadmin && (
+              <FacultyForm
+                editData={editData}
+                onSubmitSuccess={() => {
+                  setEditData(null);
+                }}
+              />
+            )}
+            {activeTab === "event" && (
+              <EventForm
+                editData={editData}
+                onSubmitSuccess={() => {
+                  setEditData(null);
+                }}
+              />
+            )}
+            {activeTab === "notice" && (
+              <NoticeForm
+                editData={editData}
+                onSubmitSuccess={() => {
+                  setEditData(null);
+                }}
+              />
+            )}
+            {activeTab === "gallery" && (
+              <GalleryForm
+                editData={editData}
+                onSubmitSuccess={() => {
+                  setEditData(null);
+                }}
+              />
+            )}
+            {activeTab === "timetable" && (
+              <TimeTableForm
+                editData={editData}
+                onSubmitSuccess={() => {
+                  setEditData(null);
+                }}
+              />
+            )}
+            {activeTab === "academic" && (
+              <AcademicForm
+                editData={editData}
+                onSubmitSuccess={() => {
+                  setEditData(null);
+                }}
+              />
+            )}
+            {activeTab === "mentor-mentee" && (
+              <MentorMenteeForm
+                editData={editData}
+                onSubmitSuccess={() => {
+                  setEditData(null);
+                }}
+              />
+            )}
+            {activeTab === "aluminia" && (
+              <Aluminia
+                editData={editData}
+                onSubmitSuccess={() => {
+                  setEditData(null);
+                }}
+              />
+            )}
+            {activeTab === "achievement" && (
+              <AchievementForm
+                editData={editData}
+                onSubmitSuccess={() => {
+                  setEditData(null);
+                }}
+              />
+            )}
+            {activeTab === "users" && isadmin ? (
+              <UserForm
+                editData={editData}
+                onSubmitSuccess={() => {
+                  setEditData(null);
+                }}
+              />
+            ) : activeTab === "users" ? (
+              <div className={`text-center py-12 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                <FaCog className="mx-auto text-5xl mb-4 text-gray-400" />
+                <h3 className="text-xl font-semibold mb-2">Access Denied</h3>
+                <p>You need administrator privileges to access this section.</p>
+              </div>
+            ) : null}
           </div>
         </div>
       </div>
-
-      {/* Delete Modal */}
-      {showDeleteModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg p-6 max-w-sm w-full">
-            <h3 className="text-lg font-semibold mb-4">Confirm Delete</h3>
-            <p className="text-gray-600 mb-6">
-              Are you sure you want to delete this{" "}
-              {menuItems.find((item) => item.id === activeTab)?.label}? This
-              action cannot be undone.
-            </p>
-            <div className="flex justify-end space-x-3">
-              <button
-                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded"
-                onClick={() => setShowDeleteModal(false)}
-              >
-                Cancel
-              </button>
-              <button
-                className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
-                onClick={() => handleDelete(selectedItem._id)}
-              >
-                Delete
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

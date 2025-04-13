@@ -1,47 +1,82 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
-import { FiEdit2, FiTrash2, FiChevronDown, FiChevronUp } from 'react-icons/fi';
+import {
+  FiEdit2,
+  FiPlus,
+  FiCalendar,
+  FiUser,
+  FiFileText,
+  FiTrash2,
+  FiChevronDown,
+  FiChevronUp,
+  FiX,
+  FiCheck,
+  FiUpload,
+  FiSave,
+} from "react-icons/fi";
+import { motion, AnimatePresence } from "framer-motion";
+import { useTheme } from "../../context/ThemeContext";
 
 // Modal Component
 const Modal = ({ isOpen, onClose, children }) => {
+  const { isDarkMode } = useTheme();
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto">
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 overflow-y-auto"
+    >
       <div className="flex items-center justify-center min-h-screen px-4">
-        <div className="fixed inset-0 bg-gray-500 bg-opacity-75" onClick={onClose}></div>
-        <div className="relative bg-white rounded-lg p-8 max-w-4xl w-full">
+        <motion.div
+          className="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm"
+          onClick={onClose}
+        ></motion.div>
+        <motion.div
+          className={`relative rounded-2xl p-8 max-w-4xl w-full shadow-2xl ${
+            isDarkMode ? "bg-gray-800" : "bg-white"
+          }`}
+        >
           <button
-            className="absolute top-4 right-4 text-gray-400 hover:text-gray-500"
+            className={`absolute top-4 right-4 ${
+              isDarkMode
+                ? "text-gray-400 hover:text-gray-300"
+                : "text-gray-400 hover:text-gray-500"
+            }`}
             onClick={onClose}
           >
             <span className="text-2xl">&times;</span>
           </button>
           {children}
-        </div>
+        </motion.div>
       </div>
-    </div>
+    </motion.div>
   );
 };
 
-const NoticeForm = () => {
+const NoticeForm = ({ editData, onSubmitSuccess }) => {
+  const { isDarkMode } = useTheme();
   const [notices, setNotices] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editData, setEditData] = useState(null);
   const [expandedNotice, setExpandedNotice] = useState(null);
-  const [noticeData, setNoticeData] = useState({
+  const [formData, setFormData] = useState({
     title: "",
     content: "",
     issuedBy: "",
-    description: "",
-    date: "",
+    fileName: "",
+    fileUrl: null,
   });
+  const [loading, setLoading] = useState(false);
+  const [preview, setPreview] = useState(null);
 
   // Fetch all notices
   const fetchNotices = async () => {
     try {
       const response = await axios.get("http://localhost:5000/api/notices");
+      console.log(response.data);
       setNotices(response.data);
     } catch (error) {
       toast.error("Failed to fetch notices");
@@ -52,54 +87,103 @@ const NoticeForm = () => {
     fetchNotices();
   }, []);
 
-  const handleChange = (e) => {
-    setNoticeData({ ...noticeData, [e.target.name]: e.target.value });
+  useEffect(() => {
+    if (editData) {
+      setFormData({
+        title: editData.title || "",
+        content: editData.content || "",
+        category: editData.category || "",
+        issuedBy: editData.issuedBy || "",
+        file: null,
+      });
+      setPreview(editData.fileUrl || null);
+    }
+  }, [editData]);
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setFormData((prev) => ({
+        ...prev,
+        file: file,
+      }));
+      setPreview(URL.createObjectURL(file));
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const token = localStorage.getItem("token");
+    setLoading(true);
 
     try {
+      const formDataToSend = new FormData();
+      formDataToSend.append("title", formData.title);
+      formDataToSend.append("content", formData.content);
+      formDataToSend.append("issuedBy", formData.issuedBy);
+
+      if (formData.file) {
+        formDataToSend.append("file", formData.file);
+      }
+
+      const token = localStorage.getItem("token");
+      const config = {
+        headers: {
+          "Content-Type": "multipart/form-data",
+          Authorization: `Bearer ${token}`,
+        },
+      };
+
       if (editData?._id) {
         await axios.put(
           `http://localhost:5000/api/notices/${editData._id}`,
-          noticeData,
-          {
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-          }
+          formDataToSend,
+          config
         );
         toast.success("Notice updated successfully");
       } else {
-        await axios.post("http://localhost:5000/api/notices", noticeData, {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        toast.success("Notice added successfully");
+        await axios.post(
+          "http://localhost:5000/api/notices",
+          formDataToSend,
+          config
+        );
+        toast.success("Notice created successfully");
       }
-      
-      setNoticeData({ title: "", description: "", date: "", issuedBy: "", content: "" });
+
+      // Reset form and close modal
+      setFormData({
+        title: "",
+        content: "",
+        issuedBy: "",
+        fileName: "",
+        fileUrl: null,
+      });
       setIsModalOpen(false);
-      fetchNotices();
+      fetchNotices(); // Refresh the notices list
     } catch (error) {
-      toast.error(error.response?.data?.message || "Error processing request");
+      console.error("Submission error:", error);
+      toast.error(error.response?.data?.message || "Error submitting notice");
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleEdit = (notice) => {
-    setEditData(notice);
-    setNoticeData({
+    setFormData({
       title: notice.title || "",
       content: notice.content || "",
+      category: notice.category || "",
       issuedBy: notice.issuedBy || "",
-      description: notice.description || "",
-      date: notice.date ? notice.date.split('T')[0] : "",
+      file: null,
     });
+    setPreview(notice.fileUrl || null);
     setIsModalOpen(true);
   };
 
@@ -121,159 +205,332 @@ const NoticeForm = () => {
   };
 
   const handleCreateNew = () => {
-    setEditData(null);
-    setNoticeData({
+    setFormData({
       title: "",
       content: "",
+      category: "",
       issuedBy: "",
-      description: "",
-      date: "",
+      file: null,
     });
+    setPreview(null);
     setIsModalOpen(true);
   };
+  const formatMediaUrl = (url) => {
+    if (!url) return "";
+    const match = url.match(/(?:id=|\/d\/)([a-zA-Z0-9_-]+)/);
+    return match ? `https://lh3.googleusercontent.com/d/${match[1]}` : url;
+  };
+  
 
   return (
-    <div className="container mx-auto p-4">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Notice Management</h1>
-        <button
+    <div
+      className={`container mx-auto p-4 ${
+        isDarkMode ? "bg-gray-900" : "bg-white"
+      }`}
+    >
+      <div className="flex justify-between items-center mb-8">
+        <div>
+          <h1
+            className={`text-3xl font-bold ${
+              isDarkMode ? "text-white" : "text-gray-900"
+            }`}
+          >
+            Notice Management
+          </h1>
+          <p
+            className={`mt-1 ${isDarkMode ? "text-gray-300" : "text-gray-600"}`}
+          >
+            Manage and publish official notices
+          </p>
+        </div>
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
           onClick={handleCreateNew}
-          className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700"
+          className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all flex items-center gap-2"
         >
+          <FiPlus className="text-xl" />
           Add New Notice
-        </button>
+        </motion.button>
       </div>
 
       {/* Notices List */}
-      <div className="mt-6 space-y-4">
+      <div className="grid gap-6">
         {notices.map((notice) => (
-          <div
+          <motion.div
             key={notice._id}
-            className="bg-gray-50 p-4 rounded-lg hover:bg-gray-100 transition duration-150"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className={`rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-all ${
+              isDarkMode ? "bg-gray-800" : "bg-white"
+            }`}
           >
-            <div 
-              className="flex justify-between items-center cursor-pointer"
-              onClick={() => setExpandedNotice(expandedNotice === notice._id ? null : notice._id)}
+            <div
+              className="p-6 cursor-pointer"
+              onClick={() =>
+                setExpandedNotice(
+                  expandedNotice === notice._id ? null : notice._id
+                )
+              }
             >
-              <div className="flex flex-col">
-                <span className="font-medium">{notice.title}</span>
-                <span className="text-sm text-gray-600">
-                  Issued By: {notice.issuedBy} - {new Date(notice.date).toLocaleDateString()}
-                </span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <button
-                  className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600 flex items-center"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleEdit(notice);
-                  }}
-                >
-                  <FiEdit2 className="inline mr-1" /> Edit
-                </button>
-                <button
-                  className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 flex items-center"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDelete(notice._id);
-                  }}
-                >
-                  <FiTrash2 className="inline mr-1" /> Delete
-                </button>
-                {expandedNotice === notice._id ? <FiChevronUp /> : <FiChevronDown />}
+              <div className="flex items-center justify-between">
+                <div className="flex flex-col gap-2">
+                  <h3
+                    className={`text-xl font-semibold ${
+                      isDarkMode ? "text-white" : "text-gray-900"
+                    }`}
+                  >
+                    {notice.title}
+                  </h3>
+                  <div
+                    className={`flex items-center gap-4 ${
+                      isDarkMode ? "text-gray-400" : "text-gray-600"
+                    }`}
+                  >
+                    <span className="flex items-center gap-1">
+                      <FiCalendar className="text-blue-600" />
+                      {new Date(notice.updatedAt).toLocaleDateString()}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <FiUser className="text-blue-600" />
+                      {notice.issuedBy}
+                    </span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <motion.button
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                    className={`p-2 text-blue-600 rounded-lg transition-colors ${
+                      isDarkMode ? "hover:bg-blue-900/20" : "hover:bg-blue-50"
+                    }`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleEdit(notice);
+                    }}
+                  >
+                    <FiEdit2 className="text-xl" />
+                  </motion.button>
+                  <motion.button
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                    className={`p-2 text-red-600 rounded-lg transition-colors ${
+                      isDarkMode ? "hover:bg-red-900/20" : "hover:bg-red-50"
+                    }`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDelete(notice._id);
+                    }}
+                  >
+                    <FiTrash2 className="text-xl" />
+                  </motion.button>
+                  {expandedNotice === notice._id ? (
+                    <FiChevronUp
+                      className={isDarkMode ? "text-gray-400" : "text-gray-600"}
+                    />
+                  ) : (
+                    <FiChevronDown
+                      className={isDarkMode ? "text-gray-400" : "text-gray-600"}
+                    />
+                  )}
+                </div>
               </div>
             </div>
 
             {/* Expanded Content */}
-            {expandedNotice === notice._id && (
-              <div className="mt-4 border-t pt-4">
-                <div className="grid gap-4">
-                  <div>
-                    <h3 className="font-semibold mb-2">Description</h3>
-                    <p className="text-sm text-gray-700">{notice.description}</p>
+            <AnimatePresence>
+              {expandedNotice === notice._id && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  className={`border-t ${
+                    isDarkMode ? "border-gray-700" : "border-gray-200"
+                  }`}
+                >
+                  <div className="p-6 grid md:grid-cols-2 gap-8">
+                    
+                    <div>
+                      <h3
+                        className={`text-lg font-semibold mb-4 ${
+                          isDarkMode ? "text-white" : "text-gray-900"
+                        }`}
+                      >
+                        Content
+                      </h3>
+                      <p
+                        className={
+                          isDarkMode ? "text-gray-300" : "text-gray-600"
+                        }
+                      >
+                        {notice.content}
+                      </p>
+                    </div>
                   </div>
                   <div>
-                    <h3 className="font-semibold mb-2">Content</h3>
-                    <p className="text-sm text-gray-700">{notice.content}</p>
+                    <img
+                      src={formatMediaUrl(notice.fileUrl)|| "404image"}
+                      alt=""
+                      className="w-full h-64 object-cover object-center"
+                    />
                   </div>
-                </div>
-              </div>
-            )}
-          </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.div>
         ))}
       </div>
 
       {/* Form Modal */}
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
-        <h2 className="text-2xl font-bold mb-4">
+        <h2
+          className={`text-2xl font-bold mb-6 ${
+            isDarkMode ? "text-white" : "text-gray-900"
+          }`}
+        >
           {editData ? "Edit Notice" : "Add New Notice"}
         </h2>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Title</label>
-            <input
-              type="text"
-              name="title"
-              value={noticeData.title}
-              onChange={handleChange}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
-              required
-            />
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="grid md:grid-cols-2 gap-6">
+            {/* Title */}
+            <div className="md:col-span-2">
+              <label
+                className={`block text-sm font-medium mb-2 ${
+                  isDarkMode ? "text-gray-300" : "text-gray-700"
+                }`}
+              >
+                Title
+              </label>
+              <input
+                type="text"
+                name="title"
+                value={formData.title}
+                onChange={handleInputChange}
+                placeholder="Enter notice title"
+                className={`w-full px-4 py-3 rounded-xl border focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${
+                  isDarkMode
+                    ? "bg-gray-700 border-gray-600 text-white placeholder-gray-400"
+                    : "bg-white border-gray-300 text-gray-900"
+                }`}
+                required
+              />
+            </div>
+
+            {/* Content */}
+            <div className="md:col-span-2">
+              <label
+                className={`block text-sm font-medium mb-2 ${
+                  isDarkMode ? "text-gray-300" : "text-gray-700"
+                }`}
+              >
+                Content
+              </label>
+              <textarea
+                name="content"
+                value={formData.content}
+                onChange={handleInputChange}
+                placeholder="Enter notice content"
+                // rows="4"
+                className={`w-full px-4 py-3 rounded-xl border focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${
+                  isDarkMode
+                    ? "bg-gray-700 border-gray-600 text-white placeholder-gray-400"
+                    : "bg-white border-gray-300 text-gray-900"
+                }`}
+                required
+              />
+            </div>
+
+            {/* Issued By */}
+            <div>
+              <label
+                className={`block text-sm font-medium mb-2 ${
+                  isDarkMode ? "text-gray-300" : "text-gray-700"
+                }`}
+              >
+                Issued By
+              </label>
+              <input
+                type="text"
+                name="issuedBy"
+                value={formData.issuedBy}
+                onChange={handleInputChange}
+                placeholder="Enter issuer name"
+                className={`w-full px-4 py-3 rounded-xl border focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${
+                  isDarkMode
+                    ? "bg-gray-700 border-gray-600 text-white placeholder-gray-400"
+                    : "bg-white border-gray-300 text-gray-900"
+                }`}
+                required
+              />
+            </div>
+
+            {/* File Upload */}
+            <div>
+              <label
+                className={`block text-sm font-medium mb-2 ${
+                  isDarkMode ? "text-gray-300" : "text-gray-700"
+                }`}
+              >
+                Attachment
+              </label>
+              <div className="flex items-center gap-4">
+                <input
+                  type="file"
+                  name="file"
+                  onChange={handleFileChange}
+                  className="hidden"
+                  id="file-upload"
+                />
+                <label
+                  htmlFor="file-upload"
+                  className={`flex items-center gap-2 px-4 py-3 rounded-xl border cursor-pointer transition-all ${
+                    isDarkMode
+                      ? "bg-gray-700 border-gray-600 text-white hover:bg-gray-600"
+                      : "bg-white border-gray-300 text-gray-900 hover:bg-gray-50"
+                  }`}
+                >
+                  <FiUpload />
+                  Upload File
+                </label>
+                {formData.fileName && (
+                  <span
+                    className={isDarkMode ? "text-gray-300" : "text-gray-700"}
+                  >
+                    {formData.fileName}
+                  </span>
+                )}
+              </div>
+            </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Content</label>
-            <input
-              type="text"
-              name="content"
-              value={noticeData.content}
-              onChange={handleChange}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
-              required
-            />
+          {/* Action Buttons */}
+          <div className="flex justify-end gap-4 mt-8">
+            <button
+              type="button"
+              onClick={() => setIsModalOpen(false)}
+              className={`px-6 py-3 rounded-xl transition-colors ${
+                isDarkMode
+                  ? "bg-gray-700 text-gray-300 hover:bg-gray-600"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              }`}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all flex items-center gap-2"
+            >
+              {loading ? (
+                <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white"></div>
+              ) : (
+                <>
+                  <FiSave className="text-xl" />
+                  {editData ? "Update Notice" : "Save Notice"}
+                </>
+              )}
+            </button>
           </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Issued By</label>
-            <input
-              type="text"
-              name="issuedBy"
-              value={noticeData.issuedBy}
-              onChange={handleChange}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Description</label>
-            <textarea
-              name="description"
-              value={noticeData.description}
-              onChange={handleChange}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Date</label>
-            <input
-              type="date"
-              name="date"
-              value={noticeData.date}
-              onChange={handleChange}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
-              required
-            />
-          </div>
-
-          <button
-            type="submit"
-            className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700"
-          >
-            {editData ? "Update Notice" : "Add Notice"}
-          </button>
         </form>
       </Modal>
     </div>

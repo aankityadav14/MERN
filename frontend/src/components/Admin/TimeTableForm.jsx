@@ -2,16 +2,20 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { FiEdit2, FiTrash2, FiChevronDown, FiChevronUp, FiUpload } from 'react-icons/fi';
+import { useTheme } from '../../context/ThemeContext';
 
 // Modal Component
 const Modal = ({ isOpen, onClose, children }) => {
+  const { isDarkMode } = useTheme();
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
       <div className="flex items-center justify-center min-h-screen px-4">
-        <div className="fixed inset-0 bg-gray-500 bg-opacity-75" onClick={onClose}></div>
-        <div className="relative bg-white rounded-lg p-8 max-w-4xl w-full">
+        <div className="fixed inset-0 bg-black bg-opacity-75" onClick={onClose}></div>
+        <div className={`relative rounded-2xl p-8 max-w-4xl w-full shadow-2xl ${
+          isDarkMode ? 'bg-gray-800 text-gray-100' : 'bg-white text-gray-900'
+        }`}>
           <button
             className="absolute top-4 right-4 text-gray-400 hover:text-gray-500"
             onClick={onClose}
@@ -26,6 +30,7 @@ const Modal = ({ isOpen, onClose, children }) => {
 };
 
 const TimeTableForm = () => {
+  const { isDarkMode } = useTheme();
   const [timeTables, setTimeTables] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editData, setEditData] = useState(null);
@@ -157,12 +162,16 @@ const TimeTableForm = () => {
   };
 
   return (
-    <div className="container mx-auto p-4">
+    <div className={`container mx-auto p-4 min-h-screen transition-colors duration-200 ${
+      isDarkMode ? 'bg-gray-900 text-gray-100' : 'bg-gray-50 text-gray-900'
+    }`}>
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Timetable Management</h1>
+        <h1 className={`text-2xl font-bold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
+          Timetable Management
+        </h1>
         <button
           onClick={handleCreateNew}
-          className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700"
+          className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
         >
           Add New Timetable
         </button>
@@ -171,17 +180,20 @@ const TimeTableForm = () => {
       {/* Timetable List */}
       <div className="mt-6 space-y-4">
         {timeTables.map((item) => (
-          <div
-            key={item._id}
-            className="bg-gray-50 p-4 rounded-lg hover:bg-gray-100 transition duration-150"
-          >
+          <div key={item._id} className={`rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-all ${
+            isDarkMode ? 'bg-gray-800' : 'bg-white'
+          }`}>
             <div 
-              className="flex justify-between items-center cursor-pointer"
+              className="flex justify-between items-center cursor-pointer p-4"
               onClick={() => setExpandedItem(expandedItem === item._id ? null : item._id)}
             >
               <div className="flex flex-col">
-                <span className="font-medium">{item.year}</span>
-                <span className="text-sm text-gray-600">Faculty: {item.facultyName}</span>
+                <span className={`font-medium ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
+                  {item.year}
+                </span>
+                <span className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>
+                  Faculty: {item.facultyName}
+                </span>
               </div>
               <div className="flex items-center space-x-2">
                 <button
@@ -202,18 +214,22 @@ const TimeTableForm = () => {
                 >
                   <FiTrash2 className="inline mr-1" /> Delete
                 </button>
-                {expandedItem === item._id ? <FiChevronUp /> : <FiChevronDown />}
+                <span className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>
+                  {expandedItem === item._id ? <FiChevronUp /> : <FiChevronDown />}
+                </span>
               </div>
             </div>
 
             {/* Expanded Content */}
             {expandedItem === item._id && (
-              <div className="mt-4 border-t pt-4">
+              <div className="mt-4 border-t border-gray-200 dark:border-gray-700 pt-4 p-4">
                 <div className="grid gap-4">
                   {item.media && (
                     <div>
-                      <h3 className="font-semibold mb-3">Preview</h3>
-                      <div className="bg-white p-2 rounded border">
+                      <h3 className={`font-semibold mb-3 ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
+                        Preview
+                      </h3>
+                      <div className={`p-2 rounded ${isDarkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
                         <div className="aspect-w-16 aspect-h-9">
                           <iframe
                             src={formatMediaUrl(item.media)}
@@ -228,7 +244,9 @@ const TimeTableForm = () => {
                             href={item.media}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-blue-600 hover:underline flex items-center justify-center"
+                            className={`hover:underline flex items-center justify-center ${
+                              isDarkMode ? 'text-blue-400' : 'text-blue-600'
+                            }`}
                           >
                             <FiUpload className="mr-2" />
                             View Original
@@ -246,44 +264,64 @@ const TimeTableForm = () => {
 
       {/* Form Modal */}
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
-        <h2 className="text-2xl font-bold mb-4">
+        <h2 className={`text-2xl font-bold mb-4 ${
+          isDarkMode ? 'text-gray-100' : 'text-gray-900'
+        }`}>
           {editData ? "Edit Timetable" : "Add New Timetable"}
         </h2>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700">Year</label>
+            <label className={`block text-sm font-medium mb-2 ${
+              isDarkMode ? 'text-gray-300' : 'text-gray-700'
+            }`}>Year</label>
             <input
               type="text"
               name="year"
               value={timeTableData.year}
               onChange={handleChange}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
+              className={`w-full px-4 py-3 rounded-xl border focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${
+                isDarkMode 
+                  ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                  : 'bg-white border-gray-300 text-gray-900'
+              }`}
               required
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">Faculty Name</label>
+            <label className={`block text-sm font-medium mb-2 ${
+              isDarkMode ? 'text-gray-300' : 'text-gray-700'
+            }`}>Faculty Name</label>
             <input
               type="text"
               name="facultyName"
               value={timeTableData.facultyName}
               onChange={handleChange}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
+              className={`w-full px-4 py-3 rounded-xl border focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${
+                isDarkMode 
+                  ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                  : 'bg-white border-gray-300 text-gray-900'
+              }`}
               required
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">Upload File</label>
+            <label className={`block text-sm font-medium mb-2 ${
+              isDarkMode ? 'text-gray-300' : 'text-gray-700'
+            }`}>Upload File</label>
             <input
               type="file"
               onChange={handleFileChange}
               accept="application/pdf,image/*"
-              className="mt-1 block w-full"
+              className={`w-full px-4 py-3 rounded-xl border focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${
+                isDarkMode 
+                  ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                  : 'bg-white border-gray-300 text-gray-900'
+              }`}
               required={!editData?._id}
             />
-            <p className="mt-1 text-sm text-gray-500">
+            <p className={`mt-1 text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
               Supported formats: PDF, Images
             </p>
           </div>

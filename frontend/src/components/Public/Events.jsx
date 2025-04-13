@@ -20,14 +20,10 @@ const Events = () => {
     fetchEvents();
   }, []);
   const getGoogleDriveImage = (url) => {
-    if (!url) return ""; // Return empty string if URL is undefined/null
-
     // Extract FILE_ID from Google Drive URL
-    const match = url.match(/(?:id=|\/d\/)([a-zA-Z0-9_-]+)/);
+    const match = url.match(/[-\w]{25,}/);
 
-    console.log(match, "match"); // Debugging output
-
-    return match ? `https://lh3.googleusercontent.com/d/${match[1]}` : url;
+    return match ? `https://lh3.googleusercontent.com/d/${match[1]}` : `https://google.com/drive/folders/uc?export=view&id=${match[1]}`;
   };
 
   return (
@@ -53,7 +49,7 @@ const Events = () => {
                 src={getGoogleDriveImage(event.imageUrl)}
                 alt={event.eventName}
                 className="w-full h-48 object-cover"
-                loading="lazy"
+                // loading="lazy"
                 referrerPolicy="no-referrer"
               />
 

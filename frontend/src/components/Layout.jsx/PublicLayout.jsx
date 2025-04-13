@@ -7,7 +7,7 @@ const PublicRoute = () => {
     <div>
       {/* Navbar is included in the public layout */}
       <Navbar />
-      <div className="container mx-auto mt-4 p-4">
+      <div className="">
         <Outlet />
       </div>
       <Footer/>

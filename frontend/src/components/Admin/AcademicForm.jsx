@@ -2,18 +2,20 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { FiEdit2, FiTrash2, FiChevronDown, FiChevronUp, FiUpload } from 'react-icons/fi';
+import { useTheme } from '../../context/ThemeContext';
 
 // Modal Component
 const Modal = ({ isOpen, onClose, children }) => {
+  const { isDarkMode } = useTheme();
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
       <div className="flex items-center justify-center min-h-screen px-4">
-        <div className="fixed inset-0 bg-gray-500 bg-opacity-75" onClick={onClose}></div>
-        <div className="relative bg-white rounded-lg p-8 max-w-4xl w-full">
+        <div className="fixed inset-0 bg-gray-900 bg-opacity-75" onClick={onClose}></div>
+        <div className={`relative rounded-2xl p-8 max-w-4xl w-full shadow-2xl ${isDarkMode ? 'bg-gray-800 text-gray-100' : 'bg-white text-gray-900'}`}>
           <button
-            className="absolute top-4 right-4 text-gray-400 hover:text-gray-500"
+            className={`absolute top-4 right-4 ${isDarkMode ? 'text-gray-400 hover:text-gray-300' : 'text-gray-400 hover:text-gray-500'}`}
             onClick={onClose}
           >
             <span className="text-2xl">&times;</span>
@@ -26,6 +28,7 @@ const Modal = ({ isOpen, onClose, children }) => {
 };
 
 const AcademicForm = () => {
+  const { isDarkMode } = useTheme();
   const [resources, setResources] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editData, setEditData] = useState(null);
@@ -177,9 +180,13 @@ const AcademicForm = () => {
   };
 
   return (
-    <div className="container mx-auto p-4">
+    <div className={`container mx-auto p-4 min-h-screen transition-colors duration-200 ${
+      isDarkMode ? 'bg-gray-900 text-gray-100' : 'bg-gray-50 text-gray-900'
+    }`}>
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Academic Resources</h1>
+        <h1 className={`text-2xl font-bold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
+          Academic Resources
+        </h1>
         <button
           onClick={handleCreateNew}
           className="bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700"
@@ -193,15 +200,19 @@ const AcademicForm = () => {
         {resources.map((resource) => (
           <div
             key={resource._id}
-            className="bg-gray-50 p-4 rounded-lg hover:bg-gray-100 transition duration-150"
+            className={`rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-all ${
+              isDarkMode ? 'bg-gray-800' : 'bg-white'
+            }`}
           >
             <div 
-              className="flex justify-between items-center cursor-pointer"
+              className="flex justify-between items-center cursor-pointer p-6"
               onClick={() => setExpandedItem(expandedItem === resource._id ? null : resource._id)}
             >
               <div className="flex flex-col">
-                <span className="font-medium">{resource.title}</span>
-                <span className="text-sm text-gray-600">
+                <span className={`font-medium ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>
+                  {resource.title}
+                </span>
+                <span className={isDarkMode ? 'text-gray-400' : 'text-gray-700'}>
                   {resource.subject} - {resource.year} ({resource.semester})
                 </span>
               </div>
@@ -230,12 +241,16 @@ const AcademicForm = () => {
 
             {/* Expanded Content */}
             {expandedItem === resource._id && (
-              <div className="mt-4 border-t pt-4">
+              <div className={`mt-4 border-t pt-4 px-6 pb-6 ${
+                isDarkMode ? 'border-gray-700' : 'border-gray-200'
+              }`}>
                 <div className="grid gap-4">
                   {resource.mediaUrl && (
                     <div>
-                      <h3 className="font-semibold mb-3">Document Preview</h3>
-                      <div className="bg-white p-2 rounded border">
+                      <h3 className={`font-semibold mb-3 ${
+                        isDarkMode ? 'text-gray-100' : 'text-gray-900'
+                      }`}>Document Preview</h3>
+                      <div className="bg-gray-700 p-2 rounded">
                         <div className="aspect-w-16 aspect-h-9">
                           <iframe
                             src={formatMediaUrl(resource.mediaUrl)}
@@ -268,42 +283,62 @@ const AcademicForm = () => {
 
       {/* Form Modal */}
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
-        <h2 className="text-2xl font-bold mb-4">
+        <h2 className={`text-2xl font-bold mb-4 ${
+          isDarkMode ? 'text-gray-100' : 'text-gray-900'
+        }`}>
           {editData ? "Edit Resource" : "Add New Resource"}
         </h2>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
+              <label className={`block text-sm font-medium mb-1 ${
+                isDarkMode ? 'text-gray-400' : 'text-gray-700'
+              }`}>Title</label>
               <input
                 type="text"
                 name="title"
                 value={formData.title}
                 onChange={handleChange}
-                className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-purple-500"
+                className={`w-full p-2 border rounded-lg focus:ring-2 focus:ring-purple-500 ${
+                  isDarkMode 
+                    ? 'bg-gray-700 border-gray-600 text-gray-100' 
+                    : 'bg-white border-gray-300 text-gray-900'
+                }`}
                 required
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Subject</label>
+              <label className={`block text-sm font-medium mb-1 ${
+                isDarkMode ? 'text-gray-400' : 'text-gray-700'
+              }`}>Subject</label>
               <input
                 type="text"
                 name="subject"
                 value={formData.subject}
                 onChange={handleChange}
-                className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-purple-500"
+                className={`w-full p-2 border rounded-lg focus:ring-2 focus:ring-purple-500 ${
+                  isDarkMode 
+                    ? 'bg-gray-700 border-gray-600 text-gray-100' 
+                    : 'bg-white border-gray-300 text-gray-900'
+                }`}
                 required
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
+              <label className={`block text-sm font-medium mb-1 ${
+                isDarkMode ? 'text-gray-400' : 'text-gray-700'
+              }`}>Type</label>
               <select
                 name="type"
                 value={formData.type}
                 onChange={handleChange}
-                className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-purple-500"
+                className={`w-full p-2 border rounded-lg focus:ring-2 focus:ring-purple-500 ${
+                  isDarkMode 
+                    ? 'bg-gray-700 border-gray-600 text-gray-100' 
+                    : 'bg-white border-gray-300 text-gray-900'
+                }`}
                 required
               >
                 <option value="syllabus">Syllabus</option>
@@ -312,12 +347,18 @@ const AcademicForm = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Year</label>
+              <label className={`block text-sm font-medium mb-1 ${
+                isDarkMode ? 'text-gray-400' : 'text-gray-700'
+              }`}>Year</label>
               <select
                 name="year"
                 value={formData.year}
                 onChange={handleChange}
-                className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-purple-500"
+                className={`w-full p-2 border rounded-lg focus:ring-2 focus:ring-purple-500 ${
+                  isDarkMode 
+                    ? 'bg-gray-700 border-gray-600 text-gray-100' 
+                    : 'bg-white border-gray-300 text-gray-900'
+                }`}
                 required
               >
                 <option value="First Year">First Year</option>
@@ -329,12 +370,18 @@ const AcademicForm = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Semester</label>
+              <label className={`block text-sm font-medium mb-1 ${
+                isDarkMode ? 'text-gray-400' : 'text-gray-700'
+              }`}>Semester</label>
               <select
                 name="semester"
                 value={formData.semester}
                 onChange={handleChange}
-                className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-purple-500"
+                className={`w-full p-2 border rounded-lg focus:ring-2 focus:ring-purple-500 ${
+                  isDarkMode 
+                    ? 'bg-gray-700 border-gray-600 text-gray-100' 
+                    : 'bg-white border-gray-300 text-gray-900'
+                }`}
                 required
               >
                 <option value="Semester 1">Semester 1</option>
@@ -349,13 +396,19 @@ const AcademicForm = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Upload File</label>
+              <label className={`block text-sm font-medium mb-1 ${
+                isDarkMode ? 'text-gray-400' : 'text-gray-700'
+              }`}>Upload File</label>
               <input
                 type="file"
                 name="file"
                 onChange={handleFileChange}
                 accept=".pdf,.doc,.docx"
-                className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-purple-500"
+                className={`w-full p-2 border rounded-lg focus:ring-2 focus:ring-purple-500 ${
+                  isDarkMode 
+                    ? 'bg-gray-700 border-gray-600 text-gray-100' 
+                    : 'bg-white border-gray-300 text-gray-900'
+                }`}
                 required
               />
               <p className="mt-1 text-sm text-gray-500">Only PDF and DOC/DOCX files are allowed</p>
