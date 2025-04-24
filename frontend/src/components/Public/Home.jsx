@@ -207,10 +207,20 @@ const Home = () => {
             transition={{ delay: 1.2, duration: 0.8 }}
             className="flex flex-col sm:flex-row gap-4 justify-center"
           >
-            <button className="px-8 py-4 bg-blue-600 text-white rounded-full font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center gap-2">
+            <button 
+              onClick={() => {
+                document.getElementById('programs').scrollIntoView({ behavior: 'smooth' });
+              }}
+              className="px-8 py-4 bg-blue-600 text-white rounded-full font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+            >
               Explore Programs <FaArrowRight />
             </button>
-            <button className="px-8 py-4 bg-white/10 text-white rounded-full font-semibold hover:bg-white/20 transition-colors backdrop-blur-sm">
+            <button 
+              onClick={() => {
+                document.getElementById('contact').scrollIntoView({ behavior: 'smooth' });
+              }}
+              className="px-8 py-4 bg-white/10 text-white rounded-full font-semibold hover:bg-white/20 transition-colors backdrop-blur-sm"
+            >
               Contact Us
             </button>
           </motion.div>
@@ -391,7 +401,7 @@ const Home = () => {
       </section>
 
       {/* Programs Section */}
-      <section className={`py-20 ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
+      <section id="programs" className={`py-20 ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
         <div className="max-w-7xl mx-auto px-4">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -822,7 +832,7 @@ const Home = () => {
         </div>
       </section>
       {/* Contact Section */}
-      <section className={`py-20 ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
+      <section id="contact" className={`py-20 ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
         <div className="max-w-7xl mx-auto px-4">
           <motion.div
             initial={{ opacity: 0, y: 20 }}

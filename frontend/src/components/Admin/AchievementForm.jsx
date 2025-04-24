@@ -59,6 +59,11 @@ const AchievementForm = () => {
     proof: null
   });
   const [previewUrls, setPreviewUrls] = useState({ image: null, proof: null });
+  const [filters, setFilters] = useState({
+    studentName: '',
+    category: '',
+    year: ''
+  });
 
   const categories = ['Academic', 'Competition', 'Hackathon', 'Internship', 'Placement', 'Other'];
 
@@ -155,6 +160,17 @@ const AchievementForm = () => {
     }
   };
 
+  const filteredAchievements = achievements.filter(achievement => {
+    const matchesName = !filters.studentName || 
+      achievement.studentName.toLowerCase().includes(filters.studentName.toLowerCase());
+    const matchesCategory = !filters.category || 
+      achievement.category === filters.category;
+    const matchesYear = !filters.year || 
+      achievement.year.toString().includes(filters.year);
+    
+    return matchesName && matchesCategory && matchesYear;
+  });
+
   return (
     <div className={`container mx-auto p-4 min-h-screen transition-colors duration-200 ${
       isDarkMode ? 'bg-gray-900 text-gray-100' : 'bg-gray-50 text-gray-900'
@@ -188,132 +204,241 @@ const AchievementForm = () => {
         </motion.button>
       </div>
 
+      {/* Filter Section */}
+      <div className={`mb-6 p-6 rounded-xl ${isDarkMode ? 'bg-gray-800' : 'bg-white'} shadow-lg`}>
+        <div className="grid md:grid-cols-3 gap-4">
+          {/* Student Name Filter */}
+          <div>
+            <input
+              type="text"
+              placeholder="Search by Student Name"
+              value={filters.studentName}
+              onChange={(e) => setFilters(prev => ({ ...prev, studentName: e.target.value }))}
+              className={`w-full px-4 py-3 rounded-lg border focus:ring-2 focus:ring-blue-500 ${
+                isDarkMode 
+                  ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                  : 'bg-white border-gray-300 text-gray-900'
+              }`}
+            />
+          </div>
+
+          {/* Category Filter */}
+          <div>
+            <select
+              value={filters.category}
+              onChange={(e) => setFilters(prev => ({ ...prev, category: e.target.value }))}
+              className={`w-full px-4 py-3 rounded-lg border focus:ring-2 focus:ring-blue-500 ${
+                isDarkMode 
+                  ? 'bg-gray-700 border-gray-600 text-white' 
+                  : 'bg-white border-gray-300 text-gray-900'
+              }`}
+            >
+              <option value="">All Categories</option>
+              {categories.map(category => (
+                <option key={category} value={category}>{category}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Year Filter */}
+          <div>
+            <input
+              type="text"
+              placeholder="Search by Year"
+              value={filters.year}
+              onChange={(e) => setFilters(prev => ({ ...prev, year: e.target.value }))}
+              className={`w-full px-4 py-3 rounded-lg border focus:ring-2 focus:ring-blue-500 ${
+                isDarkMode 
+                  ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                  : 'bg-white border-gray-300 text-gray-900'
+              }`}
+            />
+          </div>
+        </div>
+
+        {/* Active Filters Display */}
+        {(filters.studentName || filters.category || filters.year) && (
+          <div className="mt-4 flex flex-wrap items-center gap-2">
+            <span className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+              Active filters:
+            </span>
+            {filters.studentName && (
+              <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm ${
+                isDarkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-700'
+              }`}>
+                Name: {filters.studentName}
+                <FiX 
+                  className="ml-2 cursor-pointer" 
+                  onClick={() => setFilters(prev => ({ ...prev, studentName: '' }))}
+                />
+              </span>
+            )}
+            {filters.category && (
+              <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm ${
+                isDarkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-700'
+              }`}>
+                Category: {filters.category}
+                <FiX 
+                  className="ml-2 cursor-pointer" 
+                  onClick={() => setFilters(prev => ({ ...prev, category: '' }))}
+                />
+              </span>
+            )}
+            {filters.year && (
+              <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm ${
+                isDarkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-700'
+              }`}>
+                Year: {filters.year}
+                <FiX 
+                  className="ml-2 cursor-pointer" 
+                  onClick={() => setFilters(prev => ({ ...prev, year: '' }))}
+                />
+              </span>
+            )}
+            <button
+              onClick={() => setFilters({ studentName: '', category: '', year: '' })}
+              className="text-sm text-blue-500 hover:text-blue-600 ml-2"
+            >
+              Clear all
+            </button>
+          </div>
+        )}
+      </div>
+
       {/* Achievements List */}
-      <div className="grid gap-6">
-        {achievements.map((achievement) => (
-          <motion.div
-            key={achievement._id}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className={`rounded-2xl shadow-lg overflow-hidden ${
-              isDarkMode ? 'bg-gray-800' : 'bg-white'
-            }`}
-          >
-            <div className="p-6">
-              <div className="flex justify-between items-start">
-                <div className="flex items-center gap-4">
-                  {console.log(achievement , formatMediaUrl(achievement.imageUrl))}
-                  <div className="w-16 h-16 rounded-full overflow-hidden bg-gray-700">
-                    <img
-                      src={formatMediaUrl(achievement.imageUrl).image}
-                      alt={achievement.studentName}
-                      className="w-full h-full object-cover"
-                     
-                    referrerPolicy='no-referrer'
-                    />
-                  </div>
-                  <div>
-                    <h3 className={`text-xl font-semibold ${
-                      isDarkMode ? 'text-gray-100' : 'text-gray-900'
-                    }`}>{achievement.achievementTitle}</h3>
-                    <p className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>
-                      {achievement.studentName}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <motion.button
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
-                    className="p-2 text-blue-400 hover:bg-blue-700 rounded-lg transition-colors"
-                    onClick={() => {
-                      setEditData(achievement);
-                      setFormData({
-                        ...achievement,
-                        image: null,
-                        proof: null,
-                      });
-                      setIsModalOpen(true);
-                    }}
-                  >
-                    <FiEdit2 className="text-xl" />
-                  </motion.button>
-                  <motion.button
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
-                    className="p-2 text-red-400 hover:bg-red-700 rounded-lg transition-colors"
-                    onClick={async (e) => {
-                      e.stopPropagation();
-                      await handleDelete(achievement._id);
-                    }}
-                  >
-                    <FiTrash2 className="text-xl" />
-                  </motion.button>
-                  <button onClick={() => setExpandedItem(expandedItem === achievement._id ? null : achievement._id)}>
-                    {expandedItem === achievement._id ? <FiChevronUp className="text-xl" /> : <FiChevronDown className="text-xl" />}
-                  </button>
-                </div>
-              </div>
-
-              <AnimatePresence>
-                {expandedItem === achievement._id && (
-                  <motion.div
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: "auto", opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    className={`mt-4 border-t ${isDarkMode ? 'border-gray-700' : 'border-gray-200'} pt-4`}
-                  >
-                    <p className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>{achievement.description}</p>
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      <span className={`px-3 py-1 rounded-full text-sm ${
-                        isDarkMode ? 'bg-blue-900 text-blue-200' : 'bg-blue-100 text-blue-800'
-                      }`}>
-                        {achievement.category}
-                      </span>
-                      <span className={`px-3 py-1 rounded-full text-sm ${
-                        isDarkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-800'
-                      }`}>
-                        {achievement.year}
-                      </span>
+      {filteredAchievements.length > 0 ? (
+        <div className="grid gap-6">
+          {filteredAchievements.map((achievement) => (
+            <motion.div
+              key={achievement._id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className={`rounded-2xl shadow-lg overflow-hidden ${
+                isDarkMode ? 'bg-gray-800' : 'bg-white'
+              }`}
+            >
+              <div className="p-6">
+                <div className="flex justify-between items-start">
+                  <div className="flex items-center gap-4">
+                    {console.log(achievement , formatMediaUrl(achievement.imageUrl))}
+                    <div className="w-16 h-16 rounded-full overflow-hidden bg-gray-700">
+                      <img
+                        src={formatMediaUrl(achievement.imageUrl).image}
+                        alt={achievement.studentName}
+                        className="w-full h-full object-cover"
+                       
+                      referrerPolicy='no-referrer'
+                      />
                     </div>
+                    <div>
+                      <h3 className={`text-xl font-semibold ${
+                        isDarkMode ? 'text-gray-100' : 'text-gray-900'
+                      }`}>{achievement.achievementTitle}</h3>
+                      <p className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>
+                        {achievement.studentName}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <motion.button
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
+                      className="p-2 text-blue-400 hover:bg-blue-700 rounded-lg transition-colors"
+                      onClick={() => {
+                        setEditData(achievement);
+                        setFormData({
+                          ...achievement,
+                          image: null,
+                          proof: null,
+                        });
+                        setIsModalOpen(true);
+                      }}
+                    >
+                      <FiEdit2 className="text-xl" />
+                    </motion.button>
+                    <motion.button
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
+                      className="p-2 text-red-400 hover:bg-red-700 rounded-lg transition-colors"
+                      onClick={async (e) => {
+                        e.stopPropagation();
+                        await handleDelete(achievement._id);
+                      }}
+                    >
+                      <FiTrash2 className="text-xl" />
+                    </motion.button>
+                    <button onClick={() => setExpandedItem(expandedItem === achievement._id ? null : achievement._id)}>
+                      {expandedItem === achievement._id ? <FiChevronUp className="text-xl" /> : <FiChevronDown className="text-xl" />}
+                    </button>
+                  </div>
+                </div>
 
-                    {/* Add Proof Document Preview */}
-                    {achievement.proofUrl && (
-                      <div className="mt-4">
-                        <h3 className={`font-semibold mb-3 ${
-                          isDarkMode ? 'text-gray-100' : 'text-gray-900'
-                        }`}>Proof Document</h3>
-                        <div className="bg-gray-700 p-2 rounded">
-                          <div className="aspect-w-16 aspect-h-9">
-                            <iframe
-                              src={formatMediaUrl(achievement.proofUrl).preview}
-                              className="w-full h-[600px] rounded-lg"
-                              frameBorder="0"
-                              allowFullScreen
-                              loading="lazy"
-                            />
-                          </div>
-                          <div className="mt-4 text-center">
-                            <a
-                              href={achievement.proofUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-blue-600 hover:underline flex items-center justify-center"
-                            >
-                              <FiUpload className="mr-2" />
-                              View Original Document
-                            </a>
+                <AnimatePresence>
+                  {expandedItem === achievement._id && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      className={`mt-4 border-t ${isDarkMode ? 'border-gray-700' : 'border-gray-200'} pt-4`}
+                    >
+                      <p className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>{achievement.description}</p>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        <span className={`px-3 py-1 rounded-full text-sm ${
+                          isDarkMode ? 'bg-blue-900 text-blue-200' : 'bg-blue-100 text-blue-800'
+                        }`}>
+                          {achievement.category}
+                        </span>
+                        <span className={`px-3 py-1 rounded-full text-sm ${
+                          isDarkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-800'
+                        }`}>
+                          {achievement.year}
+                        </span>
+                      </div>
+
+                      {/* Add Proof Document Preview */}
+                      {achievement.proofUrl && (
+                        <div className="mt-4">
+                          <h3 className={`font-semibold mb-3 ${
+                            isDarkMode ? 'text-gray-100' : 'text-gray-900'
+                          }`}>Proof Document</h3>
+                          <div className="bg-gray-700 p-2 rounded">
+                            <div className="aspect-w-16 aspect-h-9">
+                              <iframe
+                                src={formatMediaUrl(achievement.proofUrl).preview}
+                                className="w-full h-[600px] rounded-lg"
+                                frameBorder="0"
+                                allowFullScreen
+                                loading="lazy"
+                              />
+                            </div>
+                            <div className="mt-4 text-center">
+                              <a
+                                href={achievement.proofUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-blue-600 hover:underline flex items-center justify-center"
+                              >
+                                <FiUpload className="mr-2" />
+                                View Original Document
+                              </a>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    )}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          </motion.div>
-        ))}
-      </div>
+                      )}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      ) : (
+        <div className={`text-center py-12 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+          {filters.studentName || filters.category || filters.year
+            ? 'No achievements match your filters'
+            : 'No achievements available'}
+        </div>
+      )}
 
       {/* Form Modal */}
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>

@@ -47,6 +47,12 @@ const MentorMenteeForm = () => {
     media: null
   });
 
+  // Add filter states
+  const [filters, setFilters] = useState({
+    mentorName: '',
+    semester: ''
+  });
+
   // Add these functions at the top of your MentorMenteeForm component
   const getGoogleDriveFileId = (url) => {
     if (url?.includes("drive.google.com")) {
@@ -180,6 +186,15 @@ const MentorMenteeForm = () => {
     setIsModalOpen(true);
   };
 
+  // Add filtered records logic
+  const filteredRecords = records.filter(record => {
+    const matchesMentor = !filters.mentorName || 
+      record.mentorName.toLowerCase().includes(filters.mentorName.toLowerCase());
+    const matchesSemester = !filters.semester || record.semester === filters.semester;
+    
+    return matchesMentor && matchesSemester;
+  });
+
   return (
     <div className={`container mx-auto p-4 min-h-screen transition-colors duration-200 ${
       isDarkMode ? 'bg-gray-900 text-gray-100' : 'bg-gray-50 text-gray-900'
@@ -197,130 +212,219 @@ const MentorMenteeForm = () => {
         </button>
       </div>
 
-      {/* Records List */}
-      <div className="mt-6 space-y-4">
-        {records.map((record) => (
-          <div
-            key={record._id}
-            className={`rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-all ${
-              isDarkMode ? 'bg-gray-800' : 'bg-white'
-            }`}
-          >
-            <div 
-              className="p-6 cursor-pointer"
-              onClick={() => setExpandedRecord(expandedRecord === record._id ? null : record._id)}
+      {/* Add Filter Section */}
+      <div className={`mb-6 p-6 rounded-xl ${isDarkMode ? 'bg-gray-800' : 'bg-white'} shadow-lg`}>
+        <div className="grid md:grid-cols-2 gap-4">
+          {/* Mentor Name Filter */}
+          <div>
+            <input
+              type="text"
+              placeholder="Search by Mentor Name"
+              value={filters.mentorName}
+              onChange={(e) => setFilters(prev => ({ ...prev, mentorName: e.target.value }))}
+              className={`w-full p-3 rounded-lg border focus:ring-2 focus:ring-purple-500 ${
+                isDarkMode 
+                  ? 'bg-gray-700 border-gray-600 text-white' 
+                  : 'bg-white border-gray-300 text-gray-900'
+              }`}
+            />
+          </div>
+
+          {/* Semester Filter */}
+          <div>
+            <select
+              value={filters.semester}
+              onChange={(e) => setFilters(prev => ({ ...prev, semester: e.target.value }))}
+              className={`w-full p-3 rounded-lg border focus:ring-2 focus:ring-purple-500 ${
+                isDarkMode 
+                  ? 'bg-gray-700 border-gray-600 text-white' 
+                  : 'bg-white border-gray-300 text-gray-900'
+              }`}
             >
-              <div className="flex justify-between items-center">
-                <div className="flex flex-col">
-                  <span className={`font-medium ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
-                    {record.mentorName}
-                  </span>
-                  <span className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>
-                    {record.department} - {record.semester} ({record.academicYear})
-                  </span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <button
-                    className="p-2 text-blue-400 hover:bg-blue-700 rounded-lg transition-colors"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleEdit(record);
-                    }}
-                  >
-                    <FiEdit2 className="text-xl" />
-                  </button>
-                  <button
-                    className="p-2 text-red-400 hover:bg-red-700 rounded-lg transition-colors"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDelete(record._id);
-                    }}
-                  >
-                    <FiTrash2 className="text-xl" />
-                  </button>
-                  {expandedRecord === record._id ? <FiChevronUp className="text-xl" /> : <FiChevronDown className="text-xl" />}
+              <option value="">All Semesters</option>
+              <option value="Semester 1">Semester 1</option>
+              <option value="Semester 2">Semester 2</option>
+              <option value="Semester 3">Semester 3</option>
+              <option value="Semester 4">Semester 4</option>
+              <option value="Semester 5">Semester 5</option>
+              <option value="Semester 6">Semester 6</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Active Filters Display */}
+        {(filters.mentorName || filters.semester) && (
+          <div className="mt-4 flex flex-wrap items-center gap-2">
+            <span className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+              Active filters:
+            </span>
+            {filters.mentorName && (
+              <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm ${
+                isDarkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-700'
+              }`}>
+                Mentor: {filters.mentorName}
+                <FiTrash2 
+                  className="ml-2 cursor-pointer" 
+                  onClick={() => setFilters(prev => ({ ...prev, mentorName: '' }))}
+                />
+              </span>
+            )}
+            {filters.semester && (
+              <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm ${
+                isDarkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-700'
+              }`}>
+                Semester: {filters.semester}
+                <FiTrash2 
+                  className="ml-2 cursor-pointer" 
+                  onClick={() => setFilters(prev => ({ ...prev, semester: '' }))}
+                />
+              </span>
+            )}
+            {/* Clear All Filters */}
+            <button
+              onClick={() => setFilters({ mentorName: '', semester: '' })}
+              className="text-sm text-purple-500 hover:text-purple-600 ml-2"
+            >
+              Clear all
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Update Records List to use filteredRecords */}
+      <div className="mt-6 space-y-4">
+        {filteredRecords.length > 0 ? (
+          filteredRecords.map((record) => (
+            <div
+              key={record._id}
+              className={`rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-all ${
+                isDarkMode ? 'bg-gray-800' : 'bg-white'
+              }`}
+            >
+              <div 
+                className="p-6 cursor-pointer"
+                onClick={() => setExpandedRecord(expandedRecord === record._id ? null : record._id)}
+              >
+                <div className="flex justify-between items-center">
+                  <div className="flex flex-col">
+                    <span className={`font-medium ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
+                      {record.mentorName}
+                    </span>
+                    <span className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>
+                      {record.department} - {record.semester} ({record.academicYear})
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <button
+                      className="p-2 text-blue-400 hover:bg-blue-700 rounded-lg transition-colors"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEdit(record);
+                      }}
+                    >
+                      <FiEdit2 className="text-xl" />
+                    </button>
+                    <button
+                      className="p-2 text-red-400 hover:bg-red-700 rounded-lg transition-colors"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDelete(record._id);
+                      }}
+                    >
+                      <FiTrash2 className="text-xl" />
+                    </button>
+                    {expandedRecord === record._id ? <FiChevronUp className="text-xl" /> : <FiChevronDown className="text-xl" />}
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {expandedRecord === record._id && (
-              <div className={`mt-4 border-t ${
-                isDarkMode ? 'border-gray-700' : 'border-gray-200'
-              } pt-4 px-6 pb-6`}>
-                <div className="grid md:grid-cols-2 gap-6">
-                  <div>
-                    <h3 className={`text-lg font-semibold mb-4 ${
-                      isDarkMode ? 'text-gray-100' : 'text-gray-900'
-                    }`}>
-                      Mentees List
-                    </h3>
-                    <div className="space-y-3">
-                      {record.mentees.map((mentee, index) => (
-                        <div key={index} className={`p-3 rounded-lg ${
-                          isDarkMode ? 'bg-gray-700' : 'bg-gray-100'
-                        }`}>
-                          <span className={`font-medium ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
-                            {mentee.name}
-                          </span>
-                          <span className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>
-                            {' - '}{mentee.rollNo}
-                          </span>
+              {expandedRecord === record._id && (
+                <div className={`mt-4 border-t ${
+                  isDarkMode ? 'border-gray-700' : 'border-gray-200'
+                } pt-4 px-6 pb-6`}>
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div>
+                      <h3 className={`text-lg font-semibold mb-4 ${
+                        isDarkMode ? 'text-gray-100' : 'text-gray-900'
+                      }`}>
+                        Mentees List
+                      </h3>
+                      <div className="space-y-3">
+                        {record.mentees.map((mentee, index) => (
+                          <div key={index} className={`p-3 rounded-lg ${
+                            isDarkMode ? 'bg-gray-700' : 'bg-gray-100'
+                          }`}>
+                            <span className={`font-medium ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
+                              {mentee.name}
+                            </span>
+                            <span className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>
+                              {' - '}{mentee.rollNo}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      {record.mediaUrl && (
+                        <div>
+                          <h3 className="text-lg font-semibold mb-4">Attached Document</h3>
+                          <div className="bg-gray-700 p-4 rounded-xl">
+                            {record.mediaUrl.toLowerCase().endsWith('.pdf') || 
+                           getGoogleDriveFileId(record.mediaUrl) ? (
+                            <div className="bg-white p-2 rounded border">
+                              <iframe
+                                src={getGoogleDriveFileId(record.mediaUrl) 
+                                  ? `https://drive.google.com/file/d/${getGoogleDriveFileId(record.mediaUrl)}/preview`
+                                  : `http://localhost:5000/${record.mediaUrl}`}
+                                width="100%"
+                                height="300px"
+                                className="rounded"
+                                title="Document Preview"
+                                sandbox="allow-scripts allow-same-origin"
+                              ></iframe>
+                              <a
+                                href={getGoogleDriveFileId(record.mediaUrl)
+                                  ? `https://drive.google.com/file/d/${getGoogleDriveFileId(record.mediaUrl)}/view`
+                                  : `http://localhost:5000/${record.mediaUrl}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="mt-3 inline-flex items-center text-blue-400 hover:text-blue-300"
+                              >
+                                Open Document
+                                <svg className="w-4 h-4 ml-2" fill="currentColor" viewBox="0 0 20 20">
+                                  <path d="M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z" />
+                                  <path d="M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5z" />
+                                </svg>
+                              </a>
+                            </div>
+                          ) : (
+                            <div className="bg-white p-2 rounded border">
+                              <img
+                                src={formatMediaUrl(record.mediaUrl) || `http://localhost:5000/${record.mediaUrl}`}
+                                alt="Attached media"
+                                className="max-w-full h-auto rounded"
+                              />
+                            </div>
+                          )}
+                          </div>
                         </div>
-                      ))}
+                      )}
                     </div>
                   </div>
-
-                  <div>
-                    {record.mediaUrl && (
-                      <div>
-                        <h3 className="text-lg font-semibold mb-4">Attached Document</h3>
-                        <div className="bg-gray-700 p-4 rounded-xl">
-                          {record.mediaUrl.toLowerCase().endsWith('.pdf') || 
-                         getGoogleDriveFileId(record.mediaUrl) ? (
-                          <div className="bg-white p-2 rounded border">
-                            <iframe
-                              src={getGoogleDriveFileId(record.mediaUrl) 
-                                ? `https://drive.google.com/file/d/${getGoogleDriveFileId(record.mediaUrl)}/preview`
-                                : `http://localhost:5000/${record.mediaUrl}`}
-                              width="100%"
-                              height="300px"
-                              className="rounded"
-                              title="Document Preview"
-                              sandbox="allow-scripts allow-same-origin"
-                            ></iframe>
-                            <a
-                              href={getGoogleDriveFileId(record.mediaUrl)
-                                ? `https://drive.google.com/file/d/${getGoogleDriveFileId(record.mediaUrl)}/view`
-                                : `http://localhost:5000/${record.mediaUrl}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="mt-3 inline-flex items-center text-blue-400 hover:text-blue-300"
-                            >
-                              Open Document
-                              <svg className="w-4 h-4 ml-2" fill="currentColor" viewBox="0 0 20 20">
-                                <path d="M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z" />
-                                <path d="M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5z" />
-                              </svg>
-                            </a>
-                          </div>
-                        ) : (
-                          <div className="bg-white p-2 rounded border">
-                            <img
-                              src={formatMediaUrl(record.mediaUrl) || `http://localhost:5000/${record.mediaUrl}`}
-                              alt="Attached media"
-                              className="max-w-full h-auto rounded"
-                            />
-                          </div>
-                        )}
-                        </div>
-                      </div>
-                    )}
-                  </div>
                 </div>
-              </div>
+              )}
+            </div>
+          ))
+        ) : (
+          <div className={`text-center py-12 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+            {filters.mentorName || filters.semester ? (
+              <p>No records match your filters</p>
+            ) : (
+              <p>No mentor-mentee records available</p>
             )}
           </div>
-        ))}
+        )}
       </div>
 
       {/* Form Modal */}

@@ -43,6 +43,16 @@ const TimeTableForm = () => {
     media: null,
   });
 
+  // Simplified filter state
+  const [yearFilter, setYearFilter] = useState('');
+
+  // Simplified filtered timetables logic
+  const filteredTimeTables = timeTables.filter(item => {
+    const matchesYear = !yearFilter || 
+      item.year.toLowerCase().includes(yearFilter.toLowerCase());
+    return matchesYear;
+  });
+
   // Update the formatMediaUrl and add getGoogleDriveFileId functions
   const getGoogleDriveFileId = (url) => {
     if (!url) return null;
@@ -159,89 +169,142 @@ const TimeTableForm = () => {
         </button>
       </div>
 
+      {/* Simplified Filter Section */}
+      <div className={`mb-6 p-4 rounded-xl ${isDarkMode ? 'bg-gray-800' : 'bg-white'} shadow-lg`}>
+        <div className="relative">
+          <input
+            type="text"
+            placeholder="Filter by year..."
+            value={yearFilter}
+            onChange={(e) => setYearFilter(e.target.value)}
+            className={`w-full px-4 py-3 rounded-xl border focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${
+              isDarkMode 
+                ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                : 'bg-white border-gray-300 text-gray-900'
+            }`}
+          />
+          {yearFilter && (
+            <button
+              onClick={() => setYearFilter('')}
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            >
+              <FiTrash2 className="w-5 h-5" />
+            </button>
+          )}
+        </div>
+
+        {/* Active Filter Display */}
+        {yearFilter && (
+          <div className="mt-4 flex items-center gap-2">
+            <span className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+              Active filter:
+            </span>
+            <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm ${
+              isDarkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-700'
+            }`}>
+              Year: {yearFilter}
+              <FiTrash2 
+                className="ml-2 cursor-pointer" 
+                onClick={() => setYearFilter('')}
+              />
+            </span>
+          </div>
+        )}
+      </div>
+
       {/* Timetable List */}
       <div className="mt-6 space-y-4">
-        {timeTables.map((item) => (
-          <div key={item._id} className={`rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-all ${
-            isDarkMode ? 'bg-gray-800' : 'bg-white'
-          }`}>
-            <div 
-              className="flex justify-between items-center cursor-pointer p-4"
-              onClick={() => setExpandedItem(expandedItem === item._id ? null : item._id)}
-            >
-              <div className="flex flex-col">
-                <span className={`font-medium ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
-                  {item.year}
-                </span>
-                <span className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>
-                  Faculty: {item.facultyName}
-                </span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <button
-                  className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600 flex items-center"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleEdit(item);
-                  }}
-                >
-                  <FiEdit2 className="inline mr-1" /> Edit
-                </button>
-                <button
-                  className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 flex items-center"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDelete(item._id);
-                  }}
-                >
-                  <FiTrash2 className="inline mr-1" /> Delete
-                </button>
-                <span className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>
-                  {expandedItem === item._id ? <FiChevronUp /> : <FiChevronDown />}
-                </span>
-              </div>
-            </div>
-
-            {/* Expanded Content */}
-            {expandedItem === item._id && (
-              <div className="mt-4 border-t border-gray-200 dark:border-gray-700 pt-4 p-4">
-                <div className="grid gap-4">
-                  {item.media && (
-                    <div>
-                      <h3 className={`font-semibold mb-3 ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
-                        Preview
-                      </h3>
-                      <div className={`p-2 rounded ${isDarkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
-                        <div className="aspect-w-16 aspect-h-9">
-                          <iframe
-                            src={formatMediaUrl(item.media)}
-                            className="w-full h-[600px] rounded-lg"
-                            frameBorder="0"
-                            allowFullScreen
-                            loading="lazy"
-                          />
-                        </div>
-                        <div className="mt-4 text-center">
-                          <a
-                            href={item.media}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className={`hover:underline flex items-center justify-center ${
-                              isDarkMode ? 'text-blue-400' : 'text-blue-600'
-                            }`}
-                          >
-                            <FiUpload className="mr-2" />
-                            View Original
-                          </a>
-                        </div>
-                      </div>
-                    </div>
-                  )}
+        {filteredTimeTables.length > 0 ? (
+          filteredTimeTables.map((item) => (
+            <div key={item._id} className={`rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-all ${
+              isDarkMode ? 'bg-gray-800' : 'bg-white'
+            }`}>
+              <div 
+                className="flex justify-between items-center cursor-pointer p-4"
+                onClick={() => setExpandedItem(expandedItem === item._id ? null : item._id)}
+              >
+                <div className="flex flex-col">
+                  <span className={`font-medium ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
+                    {item.year}
+                  </span>
+                  <span className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>
+                    Faculty: {item.facultyName}
+                  </span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <button
+                    className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600 flex items-center"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleEdit(item);
+                    }}
+                  >
+                    <FiEdit2 className="inline mr-1" /> Edit
+                  </button>
+                  <button
+                    className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 flex items-center"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDelete(item._id);
+                    }}
+                  >
+                    <FiTrash2 className="inline mr-1" /> Delete
+                  </button>
+                  <span className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>
+                    {expandedItem === item._id ? <FiChevronUp /> : <FiChevronDown />}
+                  </span>
                 </div>
               </div>
+
+              {/* Expanded Content */}
+              {expandedItem === item._id && (
+                <div className="mt-4 border-t border-gray-200 dark:border-gray-700 pt-4 p-4">
+                  <div className="grid gap-4">
+                    {item.media && (
+                      <div>
+                        <h3 className={`font-semibold mb-3 ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
+                          Preview
+                        </h3>
+                        <div className={`p-2 rounded ${isDarkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
+                          <div className="aspect-w-16 aspect-h-9">
+                            <iframe
+                              src={formatMediaUrl(item.media)}
+                              className="w-full h-[600px] rounded-lg"
+                              frameBorder="0"
+                              allowFullScreen
+                              loading="lazy"
+                            />
+                          </div>
+                          <div className="mt-4 text-center">
+                            <a
+                              href={item.media}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className={`hover:underline flex items-center justify-center ${
+                                isDarkMode ? 'text-blue-400' : 'text-blue-600'
+                              }`}
+                            >
+                              <FiUpload className="mr-2" />
+                              View Original
+                            </a>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          ))
+        ) : (
+          <div className={`text-center py-12 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+            {yearFilter ? (
+              <p>No timetables match the year filter</p>
+            ) : (
+              <p>No timetables available</p>
             )}
           </div>
-        ))}
+        )}
       </div>
 
       {/* Form Modal */}

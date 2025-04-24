@@ -13,6 +13,7 @@ import {
   FiChevronUp,
   FiX,
   FiCheck,
+  FiSearch,
 } from "react-icons/fi";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTheme } from "../../context/ThemeContext";
@@ -75,6 +76,12 @@ const GalleryForm = () => {
     title: "",
     type: "image",
     media: null,
+  });
+
+  // Add filter states
+  const [filters, setFilters] = useState({
+    title: '',
+    type: 'all'
   });
 
   const formatMediaUrl = (url) => {
@@ -184,6 +191,14 @@ const GalleryForm = () => {
     640: 1
   };
 
+  // Update the filtering logic before the return statement
+  const filteredGalleryItems = galleryItems.filter(item => {
+    const matchesTitle = item.title.toLowerCase().includes(filters.title.toLowerCase());
+    const matchesType = filters.type === 'all' || item.type === filters.type;
+    
+    return matchesTitle && matchesType;
+  });
+
   return (
     <div
       className={`container mx-auto p-4 ${
@@ -216,6 +231,84 @@ const GalleryForm = () => {
         </motion.button>
       </div>
 
+      {/* Add Filter Section */}
+      <div className={`mb-8 p-6 rounded-xl ${isDarkMode ? "bg-gray-800" : "bg-white"} shadow-lg`}>
+        <div className="grid md:grid-cols-2 gap-4">
+          {/* Title Search */}
+          <div className="relative">
+            <FiSearch className={`absolute left-4 top-1/2 transform -translate-y-1/2 ${
+              isDarkMode ? "text-gray-400" : "text-gray-500"
+            }`} />
+            <input
+              type="text"
+              placeholder="Search by title..."
+              value={filters.title}
+              onChange={(e) => setFilters(prev => ({ ...prev, title: e.target.value }))}
+              className={`w-full pl-12 pr-4 py-3 rounded-xl border focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${
+                isDarkMode
+                  ? "bg-gray-700 border-gray-600 text-white placeholder-gray-400"
+                  : "bg-white border-gray-300 text-gray-900"
+              }`}
+            />
+          </div>
+
+          {/* Type Filter */}
+          <div className="relative">
+            <select
+              value={filters.type}
+              onChange={(e) => setFilters(prev => ({ ...prev, type: e.target.value }))}
+              className={`w-full px-4 py-3 rounded-xl border focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${
+                isDarkMode
+                  ? "bg-gray-700 border-gray-600 text-white"
+                  : "bg-white border-gray-300 text-gray-900"
+              }`}
+            >
+              <option value="all">All Types</option>
+              <option value="image">Images</option>
+              <option value="video">Videos</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Active Filters Display */}
+        {(filters.title || filters.type !== 'all') && (
+          <div className="mt-4 flex flex-wrap items-center gap-2">
+            <span className={`text-sm ${isDarkMode ? "text-gray-400" : "text-gray-600"}`}>
+              Active filters:
+            </span>
+            {filters.title && (
+              <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm ${
+                isDarkMode ? "bg-gray-700 text-gray-300" : "bg-gray-100 text-gray-700"
+              }`}>
+                Title: {filters.title}
+                <FiX 
+                  className="ml-2 cursor-pointer" 
+                  onClick={() => setFilters(prev => ({ ...prev, title: '' }))}
+                />
+              </span>
+            )}
+            {filters.type !== 'all' && (
+              <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm ${
+                isDarkMode ? "bg-gray-700 text-gray-300" : "bg-gray-100 text-gray-700"
+              }`}>
+                Type: {filters.type.charAt(0).toUpperCase() + filters.type.slice(1)}
+                <FiX 
+                  className="ml-2 cursor-pointer" 
+                  onClick={() => setFilters(prev => ({ ...prev, type: 'all' }))}
+                />
+              </span>
+            )}
+            {/* Clear All Filters */}
+            <button
+              onClick={() => setFilters({ title: '', type: 'all' })}
+              className="text-sm text-blue-500 hover:text-blue-600 ml-2"
+            >
+              Clear all
+            </button>
+          </div>
+        )}
+      </div>
+
       {/* Masonry Gallery Grid */}
       <Masonry
         breakpointCols={breakpointColumns}
@@ -223,7 +316,7 @@ const GalleryForm = () => {
         columnClassName={masonryColumnStyles}
         style={masonryStyles}
       >
-        {galleryItems.map((item) => (
+        {filteredGalleryItems.map((item) => (
           <motion.div
             key={item._id}
             initial={{ opacity: 0, scale: 0.9 }}
@@ -305,25 +398,31 @@ const GalleryForm = () => {
           </motion.div>
         ))}
 
-        {/* Add New Item Card */}
-        {galleryItems.length === 0 && (
-          <motion.div
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={handleCreateNew}
-            className={`mb-8 aspect-square rounded-2xl cursor-pointer border-2 border-dashed flex items-center justify-center ${
-              isDarkMode
-                ? "border-gray-700 hover:border-gray-600"
-                : "border-gray-300 hover:border-blue-500"
-            }`}
-          >
-            <div className="text-center">
-              <FiPlus className={`text-4xl mb-2 ${isDarkMode ? "text-gray-500" : "text-gray-400"}`} />
-              <p className={`font-medium ${isDarkMode ? "text-gray-400" : "text-gray-600"}`}>
-                Add New Item
-              </p>
-            </div>
-          </motion.div>
+        {/* Update empty state check to use filteredGalleryItems */}
+        {filteredGalleryItems.length === 0 && (
+          <div className={`text-center py-12 ${isDarkMode ? "text-gray-400" : "text-gray-600"}`}>
+            {filters.title || filters.type !== 'all' ? (
+              <p>No gallery items match your filters</p>
+            ) : (
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={handleCreateNew}
+                className={`mb-8 aspect-square rounded-2xl cursor-pointer border-2 border-dashed flex items-center justify-center ${
+                  isDarkMode
+                    ? "border-gray-700 hover:border-gray-600"
+                    : "border-gray-300 hover:border-blue-500"
+                }`}
+              >
+                <div className="text-center">
+                  <FiPlus className={`text-4xl mb-2 ${isDarkMode ? "text-gray-500" : "text-gray-400"}`} />
+                  <p className={`font-medium ${isDarkMode ? "text-gray-400" : "text-gray-600"}`}>
+                    Add New Item
+                  </p>
+                </div>
+              </motion.div>
+            )}
+          </div>
         )}
       </Masonry>
 

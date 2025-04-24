@@ -10,11 +10,13 @@ const Academic = () => {
   const [academics, setAcademics] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [activeYear, setActiveYear] = useState('all');
-  const [activeType, setActiveType] = useState('all');
-  const [isYearFilterOpen, setIsYearFilterOpen] = useState(false);
-  const [isTypeFilterOpen, setIsTypeFilterOpen] = useState(false);
-  const [showFilters, setShowFilters] = useState(false);
+  
+  // Update filter states to match AcademicForm
+  const [filters, setFilters] = useState({
+    year: '',
+    semester: '',
+    type: ''
+  });
 
   useEffect(() => {
     const fetchAcademics = async () => {
@@ -33,20 +35,14 @@ const Academic = () => {
     fetchAcademics();
   }, []);
 
-  const getFilteredAcademics = () => {
-    return academics.filter(academic => {
-      const matchesYear = activeYear === 'all' || academic.year === activeYear;
-      const matchesType = activeType === 'all' || academic.type === activeType;
-      return matchesYear && matchesType;
-    });
-  };
-
-  const filteredAcademics = getFilteredAcademics();
-
-  const handleYearChange = (year) => {
-    setActiveYear(year);
-    setActiveType('all');
-  };
+  // Update filtered academics logic
+  const filteredAcademics = academics.filter(academic => {
+    const matchesYear = !filters.year || academic.year === filters.year;
+    const matchesSemester = !filters.semester || academic.semester === filters.semester;
+    const matchesType = !filters.type || academic.type === filters.type;
+    
+    return matchesYear && matchesSemester && matchesType;
+  });
 
   const getFileIcon = (mediaUrl) => {
     if (mediaUrl.toLowerCase().includes('.pdf')) {
@@ -71,115 +67,112 @@ const Academic = () => {
           </p>
         </motion.div>
 
-        <div className="mb-8">
-          <button
-            onClick={() => setShowFilters(!showFilters)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg mb-4 ${
-              isDarkMode 
-                ? 'bg-gray-800 text-white hover:bg-gray-700' 
-                : 'bg-white text-gray-700 hover:bg-gray-50'
-            } transition-colors duration-300`}
-          >
-            <FaFilter />
-            <span>Filter Resources</span>
-          </button>
+        {/* Updated Filter Section */}
+        <div className={`mb-8 p-6 rounded-xl ${isDarkMode ? 'bg-gray-800' : 'bg-white'} shadow-lg`}>
+          <div className="grid md:grid-cols-3 gap-4">
+            {/* Year Filter */}
+            <select
+              value={filters.year}
+              onChange={(e) => setFilters(prev => ({ ...prev, year: e.target.value }))}
+              className={`w-full p-3 rounded-lg border focus:ring-2 focus:ring-purple-500 ${
+                isDarkMode 
+                  ? 'bg-gray-700 border-gray-600 text-white' 
+                  : 'bg-white border-gray-300 text-gray-900'
+              }`}
+            >
+              <option value="">All Years</option>
+              <option value="First Year">First Year</option>
+              <option value="Second Year">Second Year</option>
+              <option value="Third Year">Third Year</option>
+              <option value="MSc Part 1">MSc Part 1</option>
+              <option value="MSc Part 2">MSc Part 2</option>
+            </select>
 
-          <AnimatePresence>
-            {showFilters && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
-                className={`p-6 rounded-xl mb-6 ${
-                  isDarkMode ? 'bg-gray-800' : 'bg-white'
-                } shadow-lg`}
+            {/* Semester Filter */}
+            <select
+              value={filters.semester}
+              onChange={(e) => setFilters(prev => ({ ...prev, semester: e.target.value }))}
+              className={`w-full p-3 rounded-lg border focus:ring-2 focus:ring-purple-500 ${
+                isDarkMode 
+                  ? 'bg-gray-700 border-gray-600 text-white' 
+                  : 'bg-white border-gray-300 text-gray-900'
+              }`}
+            >
+              <option value="">All Semesters</option>
+              <option value="Semester 1">Semester 1</option>
+              <option value="Semester 2">Semester 2</option>
+              <option value="Semester 3">Semester 3</option>
+              <option value="Semester 4">Semester 4</option>
+              <option value="semester 5">Semester 5</option>
+              <option value="semester 6">Semester 6</option>
+              <option value="part 1">Part 1</option>
+              <option value="part 2">Part 2</option>
+            </select>
+
+            {/* Type Filter */}
+            <select
+              value={filters.type}
+              onChange={(e) => setFilters(prev => ({ ...prev, type: e.target.value }))}
+              className={`w-full p-3 rounded-lg border focus:ring-2 focus:ring-purple-500 ${
+                isDarkMode 
+                  ? 'bg-gray-700 border-gray-600 text-white' 
+                  : 'bg-white border-gray-300 text-gray-900'
+              }`}
+            >
+              <option value="">All Types</option>
+              <option value="syllabus">Syllabus</option>
+              <option value="notes">Notes</option>
+            </select>
+          </div>
+
+          {/* Active Filters Display */}
+          {(filters.year || filters.semester || filters.type) && (
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              <span className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                Active filters:
+              </span>
+              {filters.year && (
+                <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm ${
+                  isDarkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-700'
+                }`}>
+                  Year: {filters.year}
+                  <FaTimes 
+                    className="ml-2 cursor-pointer" 
+                    onClick={() => setFilters(prev => ({ ...prev, year: '' }))}
+                  />
+                </span>
+              )}
+              {filters.semester && (
+                <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm ${
+                  isDarkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-700'
+                }`}>
+                  Semester: {filters.semester}
+                  <FaTimes 
+                    className="ml-2 cursor-pointer" 
+                    onClick={() => setFilters(prev => ({ ...prev, semester: '' }))}
+                  />
+                </span>
+              )}
+              {filters.type && (
+                <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm ${
+                  isDarkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-700'
+                }`}>
+                  Type: {filters.type}
+                  <FaTimes 
+                    className="ml-2 cursor-pointer" 
+                    onClick={() => setFilters(prev => ({ ...prev, type: '' }))}
+                  />
+                </span>
+              )}
+              {/* Clear All Filters */}
+              <button
+                onClick={() => setFilters({ year: '', semester: '', type: '' })}
+                className="text-sm text-purple-500 hover:text-purple-600 ml-2"
               >
-                <div className="grid md:grid-cols-2 gap-6">
-                  {/* Year Filter */}
-                  <div>
-                    <label className={`block mb-2 font-medium ${
-                      isDarkMode ? 'text-gray-200' : 'text-gray-700'
-                    }`}>
-                      Select Year
-                    </label>
-                    <select
-                      value={activeYear}
-                      onChange={(e) => handleYearChange(e.target.value)}
-                      className={`w-full p-3 rounded-lg ${
-                        isDarkMode 
-                          ? 'bg-gray-700 text-white border-gray-600' 
-                          : 'bg-gray-50 text-gray-900 border-gray-300'
-                      } focus:ring-2 focus:ring-blue-500`}
-                    >
-                      <option value="">All Years</option>
-                      <option value="FY">First Year</option>
-                      <option value="SY">Second Year</option>
-                      <option value="TY">Third Year</option>
-                    </select>
-                  </div>
-
-                  {/* Type Filter */}
-                  <div>
-                    <label className={`block mb-2 font-medium ${
-                      isDarkMode ? 'text-gray-200' : 'text-gray-700'
-                    }`}>
-                      Resource Type
-                    </label>
-                    <select
-                      value={activeType}
-                      onChange={(e) => setActiveType(e.target.value)}
-                      className={`w-full p-3 rounded-lg ${
-                        isDarkMode 
-                          ? 'bg-gray-700 text-white border-gray-600' 
-                          : 'bg-gray-50 text-gray-900 border-gray-300'
-                      } focus:ring-2 focus:ring-blue-500`}
-                    >
-                      <option value="">All Types</option>
-                      <option value="notes">Notes</option>
-                      <option value="syllabus">Syllabus</option>
-                      <option value="question-papers">Question Papers</option>
-                    </select>
-                  </div>
-                </div>
-
-                {/* Active Filters */}
-                {(activeYear || activeType) && (
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    {activeYear && (
-                      <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm ${
-                        isDarkMode 
-                          ? 'bg-gray-700 text-white' 
-                          : 'bg-gray-100 text-gray-700'
-                      }`}>
-                        {activeYear}
-                        <button
-                          onClick={() => handleYearChange('all')}
-                          className="hover:text-red-500"
-                        >
-                          <FaTimes />
-                        </button>
-                      </span>
-                    )}
-                    {activeType && (
-                      <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm ${
-                        isDarkMode 
-                          ? 'bg-gray-700 text-white' 
-                          : 'bg-gray-100 text-gray-700'
-                      }`}>
-                        {activeType}
-                        <button
-                          onClick={() => setActiveType('all')}
-                          className="hover:text-red-500"
-                        >
-                          <FaTimes />
-                        </button>
-                      </span>
-                    )}
-                  </div>
-                )}
-              </motion.div>
-            )}
-          </AnimatePresence>
+                Clear all
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Error Message */}

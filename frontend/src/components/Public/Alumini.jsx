@@ -3,14 +3,17 @@ import axios from 'axios';
 import { FaLinkedin, FaGraduationCap, FaEnvelope, FaPhone, FaBuilding, FaGithub, FaSearch } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTheme } from '../../context/ThemeContext';
+import { FiTrash2 } from 'react-icons/fi';
 
 function Alumini() {
   const { isDarkMode } = useTheme();
   const [alumni, setAlumni] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [selectedYear, setSelectedYear] = useState('all');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [filters, setFilters] = useState({
+    name: '',
+    graduationYear: ''
+  });
 
   useEffect(() => {
     const fetchAlumni = async () => {
@@ -34,13 +37,12 @@ function Alumini() {
   };
 
   const filteredAlumni = alumni.filter(alum => {
-    const matchesYear = selectedYear === 'all' || alum.graduationYear === selectedYear;
-    const matchesSearch = searchQuery === '' || 
-      alum.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      alum.department.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      alum.company?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      alum.position?.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesYear && matchesSearch;
+    const matchesName = !filters.name || 
+      alum.name.toLowerCase().includes(filters.name.toLowerCase());
+    const matchesYear = !filters.graduationYear || 
+      alum.graduationYear.toString().includes(filters.graduationYear);
+    
+    return matchesName && matchesYear;
   });
 
   const uniqueYears = [...new Set(alumni.map(alum => alum.graduationYear))].sort((a, b) => b - a);
@@ -64,40 +66,73 @@ function Alumini() {
         {/* Filters Section */}
         <div className={`mb-8 p-6 rounded-xl ${isDarkMode ? 'bg-gray-800' : 'bg-white'} shadow-lg`}>
           <div className="grid md:grid-cols-2 gap-4">
-            {/* Search Input */}
-            <div className="relative">
-              <FaSearch className={`absolute left-4 top-1/2 transform -translate-y-1/2 ${
-                isDarkMode ? 'text-gray-400' : 'text-gray-500'
-              }`} />
+            {/* Name Filter */}
+            <div>
               <input
                 type="text"
-                placeholder="Search by name, company, or position..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className={`w-full pl-12 pr-4 py-3 rounded-lg ${
+                placeholder="Search by Name"
+                value={filters.name}
+                onChange={(e) => setFilters(prev => ({ ...prev, name: e.target.value }))}
+                className={`w-full p-3 rounded-lg border focus:ring-2 focus:ring-purple-500 ${
                   isDarkMode 
-                    ? 'bg-gray-700 text-white border-gray-600 placeholder-gray-400' 
-                    : 'bg-gray-50 text-gray-900 border-gray-300'
-                } focus:ring-2 focus:ring-blue-500`}
+                    ? 'bg-gray-700 border-gray-600 text-white' 
+                    : 'bg-white border-gray-300 text-gray-900'
+                }`}
               />
             </div>
 
-            {/* Year Filter */}
-            <select
-              value={selectedYear}
-              onChange={(e) => setSelectedYear(e.target.value)}
-              className={`w-full p-3 rounded-lg ${
-                isDarkMode 
-                  ? 'bg-gray-700 text-white border-gray-600' 
-                  : 'bg-gray-50 text-gray-900 border-gray-300'
-              } focus:ring-2 focus:ring-blue-500`}
-            >
-              <option value="all">All Graduation Years</option>
-              {uniqueYears.map(year => (
-                <option key={year} value={year}>{year}</option>
-              ))}
-            </select>
+            {/* Graduation Year Filter */}
+            <div>
+              <input
+                type="text"
+                placeholder="Search by Graduation Year"
+                value={filters.graduationYear}
+                onChange={(e) => setFilters(prev => ({ ...prev, graduationYear: e.target.value }))}
+                className={`w-full p-3 rounded-lg border focus:ring-2 focus:ring-purple-500 ${
+                  isDarkMode 
+                    ? 'bg-gray-700 border-gray-600 text-white' 
+                    : 'bg-white border-gray-300 text-gray-900'
+                }`}
+              />
+            </div>
           </div>
+
+          {/* Active Filters Display */}
+          {(filters.name || filters.graduationYear) && (
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              <span className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                Active filters:
+              </span>
+              {filters.name && (
+                <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm ${
+                  isDarkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-700'
+                }`}>
+                  Name: {filters.name}
+                  <FiTrash2 
+                    className="ml-2 cursor-pointer" 
+                    onClick={() => setFilters(prev => ({ ...prev, name: '' }))}
+                  />
+                </span>
+              )}
+              {filters.graduationYear && (
+                <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm ${
+                  isDarkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-700'
+                }`}>
+                  Year: {filters.graduationYear}
+                  <FiTrash2 
+                    className="ml-2 cursor-pointer" 
+                    onClick={() => setFilters(prev => ({ ...prev, graduationYear: '' }))}
+                  />
+                </span>
+              )}
+              <button
+                onClick={() => setFilters({ name: '', graduationYear: '' })}
+                className="text-sm text-purple-500 hover:text-purple-600 ml-2"
+              >
+                Clear all
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Error Message */}
@@ -199,8 +234,8 @@ function Alumini() {
             animate={{ opacity: 1 }}
             className={`text-center py-12 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}
           >
-            {searchQuery
-              ? 'No alumni found matching your search criteria'
+            {filters.name || filters.graduationYear
+              ? 'No alumni found matching your filters'
               : 'No alumni records available'}
           </motion.div>
         )}

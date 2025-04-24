@@ -73,6 +73,10 @@ const NoticeForm = ({ editData, onSubmitSuccess }) => {
   });
   const [loading, setLoading] = useState(false);
   const [preview, setPreview] = useState(null);
+  const [filters, setFilters] = useState({
+    title: '',
+    date: ''
+  });
 
   // Fetch all notices
   const fetchNotices = async () => {
@@ -205,6 +209,15 @@ const NoticeForm = ({ editData, onSubmitSuccess }) => {
       : `https://google.com/drive/folders/uc?export=view&id=${match[0]}`;
   };
 
+  const filteredNotices = notices.filter(notice => {
+    const matchesTitle = !filters.title || 
+      notice.title.toLowerCase().includes(filters.title.toLowerCase());
+    const matchesDate = !filters.date || 
+      new Date(notice.updatedAt).toLocaleDateString().includes(filters.date);
+    
+    return matchesTitle && matchesDate;
+  });
+
   return (
     <div
       className={`container mx-auto p-4 ${
@@ -237,132 +250,211 @@ const NoticeForm = ({ editData, onSubmitSuccess }) => {
         </motion.button>
       </div>
 
+      <div className={`mb-6 p-6 rounded-xl ${isDarkMode ? 'bg-gray-800' : 'bg-white'} shadow-lg`}>
+        <div className="grid md:grid-cols-2 gap-4">
+          {/* Title Filter */}
+          <div>
+            <input
+              type="text"
+              placeholder="Search by Title"
+              value={filters.title}
+              onChange={(e) => setFilters(prev => ({ ...prev, title: e.target.value }))}
+              className={`w-full px-4 py-3 rounded-xl border focus:ring-2 focus:ring-blue-500 ${
+                isDarkMode 
+                  ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                  : 'bg-white border-gray-300 text-gray-900'
+              }`}
+            />
+          </div>
+
+          {/* Date Filter */}
+          <div>
+            <input
+              type="text"
+              placeholder="Search by Date (MM/DD/YYYY)"
+              value={filters.date}
+              onChange={(e) => setFilters(prev => ({ ...prev, date: e.target.value }))}
+              className={`w-full px-4 py-3 rounded-xl border focus:ring-2 focus:ring-blue-500 ${
+                isDarkMode 
+                  ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                  : 'bg-white border-gray-300 text-gray-900'
+              }`}
+            />
+          </div>
+        </div>
+
+        {/* Active Filters Display */}
+        {(filters.title || filters.date) && (
+          <div className="mt-4 flex flex-wrap items-center gap-2">
+            <span className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+              Active filters:
+            </span>
+            {filters.title && (
+              <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm ${
+                isDarkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-700'
+              }`}>
+                Title: {filters.title}
+                <FiX 
+                  className="ml-2 cursor-pointer" 
+                  onClick={() => setFilters(prev => ({ ...prev, title: '' }))}
+                />
+              </span>
+            )}
+            {filters.date && (
+              <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm ${
+                isDarkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-700'
+              }`}>
+                Date: {filters.date}
+                <FiX 
+                  className="ml-2 cursor-pointer" 
+                  onClick={() => setFilters(prev => ({ ...prev, date: '' }))}
+                />
+              </span>
+            )}
+            <button
+              onClick={() => setFilters({ title: '', date: '' })}
+              className="text-sm text-blue-500 hover:text-blue-600 ml-2"
+            >
+              Clear all
+            </button>
+          </div>
+        )}
+      </div>
+
       {/* Notices List */}
       <div className="grid gap-6">
-        {notices.map((notice) => (
-          <motion.div
-            key={notice._id}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className={`rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-all ${
-              isDarkMode ? "bg-gray-800" : "bg-white"
-            }`}
-          >
-            <div
-              className="p-6 cursor-pointer"
-              onClick={() =>
-                setExpandedNotice(
-                  expandedNotice === notice._id ? null : notice._id
-                )
-              }
+        {filteredNotices.length > 0 ? (
+          filteredNotices.map((notice) => (
+            <motion.div
+              key={notice._id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className={`rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-all ${
+                isDarkMode ? "bg-gray-800" : "bg-white"
+              }`}
             >
-              <div className="flex items-center justify-between">
-                <div className="flex flex-col gap-2">
-                  <h3
-                    className={`text-xl font-semibold ${
-                      isDarkMode ? "text-white" : "text-gray-900"
-                    }`}
-                  >
-                    {notice.title}
-                  </h3>
-                  <div
-                    className={`flex items-center gap-4 ${
-                      isDarkMode ? "text-gray-400" : "text-gray-600"
-                    }`}
-                  >
-                    <span className="flex items-center gap-1">
-                      <FiCalendar className="text-blue-600" />
-                      {new Date(notice.updatedAt).toLocaleDateString()}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <FiUser className="text-blue-600" />
-                      {notice.issuedBy}
-                    </span>
+              <div
+                className="p-6 cursor-pointer"
+                onClick={() =>
+                  setExpandedNotice(
+                    expandedNotice === notice._id ? null : notice._id
+                  )
+                }
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex flex-col gap-2">
+                    <h3
+                      className={`text-xl font-semibold ${
+                        isDarkMode ? "text-white" : "text-gray-900"
+                      }`}
+                    >
+                      {notice.title}
+                    </h3>
+                    <div
+                      className={`flex items-center gap-4 ${
+                        isDarkMode ? "text-gray-400" : "text-gray-600"
+                      }`}
+                    >
+                      <span className="flex items-center gap-1">
+                        <FiCalendar className="text-blue-600" />
+                        {new Date(notice.updatedAt).toLocaleDateString()}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <FiUser className="text-blue-600" />
+                        {notice.issuedBy}
+                      </span>
+                    </div>
                   </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <motion.button
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
-                    className={`p-2 text-blue-600 rounded-lg transition-colors ${
-                      isDarkMode ? "hover:bg-blue-900/20" : "hover:bg-blue-50"
-                    }`}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleEdit(notice);
-                    }}
-                  >
-                    <FiEdit2 className="text-xl" />
-                  </motion.button>
-                  <motion.button
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
-                    className={`p-2 text-red-600 rounded-lg transition-colors ${
-                      isDarkMode ? "hover:bg-red-900/20" : "hover:bg-red-50"
-                    }`}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDelete(notice._id);
-                    }}
-                  >
-                    <FiTrash2 className="text-xl" />
-                  </motion.button>
-                  {expandedNotice === notice._id ? (
-                    <FiChevronUp
-                      className={isDarkMode ? "text-gray-400" : "text-gray-600"}
-                    />
-                  ) : (
-                    <FiChevronDown
-                      className={isDarkMode ? "text-gray-400" : "text-gray-600"}
-                    />
-                  )}
+                  <div className="flex items-center gap-3">
+                    <motion.button
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
+                      className={`p-2 text-blue-600 rounded-lg transition-colors ${
+                        isDarkMode ? "hover:bg-blue-900/20" : "hover:bg-blue-50"
+                      }`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEdit(notice);
+                      }}
+                    >
+                      <FiEdit2 className="text-xl" />
+                    </motion.button>
+                    <motion.button
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
+                      className={`p-2 text-red-600 rounded-lg transition-colors ${
+                        isDarkMode ? "hover:bg-red-900/20" : "hover:bg-red-50"
+                      }`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDelete(notice._id);
+                      }}
+                    >
+                      <FiTrash2 className="text-xl" />
+                    </motion.button>
+                    {expandedNotice === notice._id ? (
+                      <FiChevronUp
+                        className={isDarkMode ? "text-gray-400" : "text-gray-600"}
+                      />
+                    ) : (
+                      <FiChevronDown
+                        className={isDarkMode ? "text-gray-400" : "text-gray-600"}
+                      />
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* Expanded Content */}
-            <AnimatePresence>
-              {expandedNotice === notice._id && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: "auto", opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  className={`border-t ${
-                    isDarkMode ? "border-gray-700" : "border-gray-200"
-                  }`}
-                >
-                  <div className="p-6 grid md:grid-cols-2 gap-8">
-                    <div>
-                      <h3
-                        className={`text-lg font-semibold mb-4 ${
-                          isDarkMode ? "text-white" : "text-gray-900"
-                        }`}
-                      >
-                        Content
-                      </h3>
-                      <p
-                        className={
-                          isDarkMode ? "text-gray-300" : "text-gray-600"
-                        }
-                      >
-                        {notice.content}
-                      </p>
+              {/* Expanded Content */}
+              <AnimatePresence>
+                {expandedNotice === notice._id && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    className={`border-t ${
+                      isDarkMode ? "border-gray-700" : "border-gray-200"
+                    }`}
+                  >
+                    <div className="p-6 grid md:grid-cols-2 gap-8">
+                      <div>
+                        <h3
+                          className={`text-lg font-semibold mb-4 ${
+                            isDarkMode ? "text-white" : "text-gray-900"
+                          }`}
+                        >
+                          Content
+                        </h3>
+                        <p
+                          className={
+                            isDarkMode ? "text-gray-300" : "text-gray-600"
+                          }
+                        >
+                          {notice.content}
+                        </p>
+                      </div>
+                      <div>
+                        <img
+                          src={formatMediaUrl(notice.fileUrl)}
+                          alt=""
+                          referrerPolicy="no-referrer"
+                          loading="lazy"
+                          className="w-full h-64 object-cover object-center"
+                        />
+                      </div>
                     </div>
-                    <div>
-                      <img
-                        src={formatMediaUrl(notice.fileUrl)}
-                        alt=""
-                        referrerPolicy="no-referrer"
-                        loading="lazy"
-                        className="w-full h-64 object-cover object-center"
-                      />
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </motion.div>
-        ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.div>
+          ))
+        ) : (
+          <div className={`text-center py-12 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+            {filters.title || filters.date
+              ? 'No notices match your filters'
+              : 'No notices available'}
+          </div>
+        )}
       </div>
 
       {/* Form Modal */}

@@ -45,6 +45,10 @@ const Aluminia = () => {
     currentPosition: "",
     company: ""
   });
+  const [filters, setFilters] = useState({
+    name: '',
+    graduationYear: ''
+  });
 
   const getGoogleDriveImage = (url) => {
     if (!url) return "";
@@ -156,6 +160,15 @@ const Aluminia = () => {
     setIsModalOpen(true);
   };
 
+  const filteredAlumni = alumni.filter(alum => {
+    const matchesName = !filters.name || 
+      alum.name.toLowerCase().includes(filters.name.toLowerCase());
+    const matchesYear = !filters.graduationYear || 
+      alum.graduationYear.toString().includes(filters.graduationYear);
+    
+    return matchesName && matchesYear;
+  });
+
   return (
     <div className={`container mx-auto p-4 min-h-screen transition-colors duration-200 ${
       isDarkMode ? 'bg-gray-900 text-gray-100' : 'bg-gray-50 text-gray-900'
@@ -172,101 +185,179 @@ const Aluminia = () => {
         </button>
       </div>
 
-      <div className="mt-6 space-y-4">
-        {alumni.map((alum) => (
-          <div
-            key={alum._id}
-            className={`rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-all ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}
-          >
-            <div 
-              className="p-6 cursor-pointer"
-              onClick={() => setExpandedAlumni(expandedAlumni === alum._id ? null : alum._id)}
+      <div className={`mb-6 p-6 rounded-xl ${isDarkMode ? 'bg-gray-800' : 'bg-white'} shadow-lg`}>
+        <div className="grid md:grid-cols-2 gap-4">
+          <div>
+            <input
+              type="text"
+              placeholder="Search by Name"
+              value={filters.name}
+              onChange={(e) => setFilters(prev => ({ ...prev, name: e.target.value }))}
+              className={`w-full p-3 rounded-lg border focus:ring-2 focus:ring-purple-500 ${
+                isDarkMode 
+                  ? 'bg-gray-700 border-gray-600 text-white' 
+                  : 'bg-white border-gray-300 text-gray-900'
+              }`}
+            />
+          </div>
+
+          <div>
+            <input
+              type="text"
+              placeholder="Search by Graduation Year"
+              value={filters.graduationYear}
+              onChange={(e) => setFilters(prev => ({ ...prev, graduationYear: e.target.value }))}
+              className={`w-full p-3 rounded-lg border focus:ring-2 focus:ring-purple-500 ${
+                isDarkMode 
+                  ? 'bg-gray-700 border-gray-600 text-white' 
+                  : 'bg-white border-gray-300 text-gray-900'
+              }`}
+            />
+          </div>
+        </div>
+
+        {(filters.name || filters.graduationYear) && (
+          <div className="mt-4 flex flex-wrap items-center gap-2">
+            <span className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+              Active filters:
+            </span>
+            {filters.name && (
+              <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm ${
+                isDarkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-700'
+              }`}>
+                Name: {filters.name}
+                <FiTrash2 
+                  className="ml-2 cursor-pointer" 
+                  onClick={() => setFilters(prev => ({ ...prev, name: '' }))}
+                />
+              </span>
+            )}
+            {filters.graduationYear && (
+              <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm ${
+                isDarkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-700'
+              }`}>
+                Year: {filters.graduationYear}
+                <FiTrash2 
+                  className="ml-2 cursor-pointer" 
+                  onClick={() => setFilters(prev => ({ ...prev, graduationYear: '' }))}
+                />
+              </span>
+            )}
+            <button
+              onClick={() => setFilters({ name: '', graduationYear: '' })}
+              className="text-sm text-purple-500 hover:text-purple-600 ml-2"
             >
-              <div className="flex justify-between items-center">
-                <div className="flex flex-col">
-                  <span className={`font-medium ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
-                    {alum.name}
-                  </span>
-                  <span className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>
-                    {alum.graduationYear} - {alum.department}
-                  </span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <button
-                    className="p-2 text-blue-400 hover:bg-blue-700 rounded-lg transition-colors"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleEdit(alum);
-                    }}
-                  >
-                    <FiEdit2 className="text-xl" />
-                  </button>
-                  <button
-                    className="p-2 text-red-400 hover:bg-red-700 rounded-lg transition-colors"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDelete(alum._id);
-                    }}
-                  >
-                    <FiTrash2 className="text-xl" />
-                  </button>
-                  {expandedAlumni === alum._id ? <FiChevronUp className="text-xl" /> : <FiChevronDown className="text-xl" />}
+              Clear all
+            </button>
+          </div>
+        )}
+      </div>
+
+      <div className="mt-6 space-y-4">
+        {filteredAlumni.length > 0 ? (
+          filteredAlumni.map((alum) => (
+            <div
+              key={alum._id}
+              className={`rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-all ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}
+            >
+              <div 
+                className="p-6 cursor-pointer"
+                onClick={() => setExpandedAlumni(expandedAlumni === alum._id ? null : alum._id)}
+              >
+                <div className="flex justify-between items-center">
+                  <div className="flex flex-col">
+                    <span className={`font-medium ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
+                      {alum.name}
+                    </span>
+                    <span className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>
+                      {alum.graduationYear} - {alum.department}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <button
+                      className="p-2 text-blue-400 hover:bg-blue-700 rounded-lg transition-colors"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEdit(alum);
+                      }}
+                    >
+                      <FiEdit2 className="text-xl" />
+                    </button>
+                    <button
+                      className="p-2 text-red-400 hover:bg-red-700 rounded-lg transition-colors"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDelete(alum._id);
+                      }}
+                    >
+                      <FiTrash2 className="text-xl" />
+                    </button>
+                    {expandedAlumni === alum._id ? <FiChevronUp className="text-xl" /> : <FiChevronDown className="text-xl" />}
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {expandedAlumni === alum._id && (
-              <div className={`mt-4 border-t pt-4 px-6 pb-6 ${
-                isDarkMode ? 'border-gray-700' : 'border-gray-200'
-              }`}>
-                <div className="grid md:grid-cols-2 gap-6">
-                  <div>
-                    <h3 className={`text-lg font-semibold mb-4 ${
-                      isDarkMode ? 'text-gray-100' : 'text-gray-900'
-                    }`}>Contact Information</h3>
-                    <div className={`space-y-3 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                      <p><strong className={isDarkMode ? 'text-gray-300' : 'text-gray-700'}>Email:</strong> {alum.email}</p>
-                      <p><strong className={isDarkMode ? 'text-gray-300' : 'text-gray-700'}>Phone:</strong> {alum.phone}</p>
-                      {alum.linkedin && (
-                        <p>
-                          <strong className={isDarkMode ? 'text-gray-300' : 'text-gray-700'}>LinkedIn:</strong>{" "}
-                          <a
-                            href={alum.linkedin}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-blue-400 hover:text-blue-300"
-                          >
-                            Profile
-                          </a>
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                  {alum.imageUrl && (
+              {expandedAlumni === alum._id && (
+                <div className={`mt-4 border-t pt-4 px-6 pb-6 ${
+                  isDarkMode ? 'border-gray-700' : 'border-gray-200'
+                }`}>
+                  <div className="grid md:grid-cols-2 gap-6">
                     <div>
                       <h3 className={`text-lg font-semibold mb-4 ${
                         isDarkMode ? 'text-gray-100' : 'text-gray-900'
-                      }`}>Profile Image</h3>
-                      <div className="bg-gray-700 p-4 rounded-xl">
-                        <img
-                          src={getGoogleDriveImage(alum.imageUrl)}
-                          alt={alum.name}
-                          className="w-full h-auto object-contain rounded"
-                          loading="lazy"
-                          referrerPolicy="no-referrer"
-                          onError={(e) => {
-                            e.target.onerror = null;
-                            e.target.src = "https://via.placeholder.com/150?text=No+Image";
-                          }}
-                        />
+                      }`}>Contact Information</h3>
+                      <div className={`space-y-3 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                        <p><strong className={isDarkMode ? 'text-gray-300' : 'text-gray-700'}>Email:</strong> {alum.email}</p>
+                        <p><strong className={isDarkMode ? 'text-gray-300' : 'text-gray-700'}>Phone:</strong> {alum.phone}</p>
+                        {alum.linkedin && (
+                          <p>
+                            <strong className={isDarkMode ? 'text-gray-300' : 'text-gray-700'}>LinkedIn:</strong>{" "}
+                            <a
+                              href={alum.linkedin}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-400 hover:text-blue-300"
+                            >
+                              Profile
+                            </a>
+                          </p>
+                        )}
                       </div>
                     </div>
-                  )}
+                    {alum.imageUrl && (
+                      <div>
+                        <h3 className={`text-lg font-semibold mb-4 ${
+                          isDarkMode ? 'text-gray-100' : 'text-gray-900'
+                        }`}>Profile Image</h3>
+                        <div className="bg-gray-700 p-4 rounded-xl">
+                          <img
+                            src={getGoogleDriveImage(alum.imageUrl)}
+                            alt={alum.name}
+                            className="w-full h-auto object-contain rounded"
+                            loading="lazy"
+                            referrerPolicy="no-referrer"
+                            onError={(e) => {
+                              e.target.onerror = null;
+                              e.target.src = "https://via.placeholder.com/150?text=No+Image";
+                            }}
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
+              )}
+            </div>
+          ))
+        ) : (
+          <div className={`text-center py-12 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+            {filters.name || filters.graduationYear ? (
+              <p>No alumni match your filters</p>
+            ) : (
+              <p>No alumni records available</p>
             )}
           </div>
-        ))}
+        )}
       </div>
 
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>

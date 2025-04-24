@@ -60,9 +60,10 @@ const EventForm = () => {
     location: "",
     imageUrl: null, // Changed from media to imageUrl
   });
-  const [searchQuery, setSearchQuery] = useState('');
-  const [dateFilter, setDateFilter] = useState('');
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [filters, setFilters] = useState({
+    title: '',
+    date: ''
+  });
 
   // Add these utility functions at the top of your EventForm component, after the useState declarations
   const getGoogleDriveImage = (url) => {
@@ -169,9 +170,14 @@ const EventForm = () => {
   };
 
   const filteredEvents = events.filter(event => {
-    const matchesSearch = event.title.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesDate = !dateFilter || new Date(event.date).toISOString().split('T')[0] === dateFilter;
-    return matchesSearch && matchesDate;
+    // Title filter
+    const matchesTitle = event.title.toLowerCase().includes(filters.title.toLowerCase());
+    
+    // Date filter
+    const matchesDate = !filters.date || 
+      new Date(event.date).toISOString().split('T')[0] === filters.date;
+
+    return matchesTitle && matchesDate;
   });
 
   return (
@@ -198,18 +204,19 @@ const EventForm = () => {
         </motion.button>
       </div>
 
-      <div className="mb-8">
-        <div className="flex flex-col md:flex-row gap-4 items-start md:items-center">
-          {/* Search Bar */}
-          <div className="relative flex-1">
+      {/* Simplified Filter Section */}
+      <div className={`mb-8 p-6 rounded-xl ${isDarkMode ? 'bg-gray-800' : 'bg-white'} shadow-lg`}>
+        <div className="grid md:grid-cols-2 gap-4">
+          {/* Title Search */}
+          <div className="relative">
             <FiSearch className={`absolute left-4 top-1/2 -translate-y-1/2 ${
               isDarkMode ? 'text-gray-400' : 'text-gray-500'
             }`} />
             <input
               type="text"
-              placeholder="Search events..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search by title..."
+              value={filters.title}
+              onChange={(e) => setFilters(prev => ({ ...prev, title: e.target.value }))}
               className={`w-full pl-12 pr-4 py-3 rounded-xl border focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${
                 isDarkMode 
                   ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
@@ -220,85 +227,57 @@ const EventForm = () => {
 
           {/* Date Filter */}
           <div className="relative">
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={() => setIsFilterOpen(!isFilterOpen)}
-              className={`flex items-center gap-2 px-4 py-3 rounded-xl border ${
-                isDarkMode
-                  ? 'bg-gray-700 border-gray-600 text-white'
+            <FiCalendar className={`absolute left-4 top-1/2 -translate-y-1/2 ${
+              isDarkMode ? 'text-gray-400' : 'text-gray-500'
+            }`} />
+            <input
+              type="date"
+              value={filters.date}
+              onChange={(e) => setFilters(prev => ({ ...prev, date: e.target.value }))}
+              className={`w-full pl-12 pr-4 py-3 rounded-xl border focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${
+                isDarkMode 
+                  ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
                   : 'bg-white border-gray-300 text-gray-900'
-              } ${dateFilter ? 'ring-2 ring-blue-500' : ''}`}
-            >
-              <FiFilter className={dateFilter ? 'text-blue-500' : ''} />
-              <span>{dateFilter ? 'Filtered by date' : 'Filter by date'}</span>
-            </motion.button>
-
-            <AnimatePresence>
-              {isFilterOpen && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 10 }}
-                  className={`absolute right-0 mt-2 p-4 rounded-xl shadow-lg z-10 ${
-                    isDarkMode ? 'bg-gray-800' : 'bg-white'
-                  }`}
-                >
-                  <div className="flex flex-col gap-2">
-                    <label className={`text-sm font-medium ${
-                      isDarkMode ? 'text-gray-300' : 'text-gray-700'
-                    }`}>
-                      Select Date
-                    </label>
-                    <input
-                      type="date"
-                      value={dateFilter}
-                      onChange={(e) => setDateFilter(e.target.value)}
-                      className={`px-4 py-2 rounded-lg border ${
-                        isDarkMode
-                          ? 'bg-gray-700 border-gray-600 text-white'
-                          : 'bg-white border-gray-300 text-gray-900'
-                      }`}
-                    />
-                    {dateFilter && (
-                      <button
-                        onClick={() => {
-                          setDateFilter('');
-                          setIsFilterOpen(false);
-                        }}
-                        className="mt-2 text-sm text-blue-500 hover:text-blue-600"
-                      >
-                        Clear filter
-                      </button>
-                    )}
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+              }`}
+            />
           </div>
         </div>
 
-        {/* Filter Status */}
-        {(searchQuery || dateFilter) && (
-          <div className="mt-4 flex items-center gap-2">
+        {/* Active Filters Display */}
+        {(filters.title || filters.date) && (
+          <div className="mt-4 flex flex-wrap items-center gap-2">
             <span className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-              Showing results for:
+              Active filters:
             </span>
-            {searchQuery && (
+            {filters.title && (
               <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm ${
                 isDarkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-700'
               }`}>
-                Search: {searchQuery}
+                Title: {filters.title}
+                <FiX 
+                  className="ml-2 cursor-pointer" 
+                  onClick={() => setFilters(prev => ({ ...prev, title: '' }))}
+                />
               </span>
             )}
-            {dateFilter && (
+            {filters.date && (
               <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm ${
                 isDarkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-700'
               }`}>
-                <FiCalendar className="mr-1" />
-                Date: {new Date(dateFilter).toLocaleDateString()}
+                Date: {new Date(filters.date).toLocaleDateString()}
+                <FiX 
+                  className="ml-2 cursor-pointer" 
+                  onClick={() => setFilters(prev => ({ ...prev, date: '' }))}
+                />
               </span>
             )}
+            {/* Clear All Filters */}
+            <button
+              onClick={() => setFilters({ title: '', date: '' })}
+              className="text-sm text-blue-500 hover:text-blue-600 ml-2"
+            >
+              Clear all
+            </button>
           </div>
         )}
       </div>

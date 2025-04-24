@@ -44,6 +44,13 @@ const AcademicForm = () => {
     file: null,
   });
 
+  // Add filter states
+  const [filters, setFilters] = useState({
+    year: '',
+    semester: '',
+    type: ''
+  });
+
   const getGoogleDriveFileId = (url) => {
     if (!url) return null;
     if (url.includes("drive.google.com")) {
@@ -157,6 +164,15 @@ const AcademicForm = () => {
     setIsModalOpen(true);
   };
 
+  // Add filtered resources logic
+  const filteredResources = resources.filter(resource => {
+    const matchesYear = !filters.year || resource.year === filters.year;
+    const matchesSemester = !filters.semester || resource.semester === filters.semester;
+    const matchesType = !filters.type || resource.type === filters.type;
+    
+    return matchesYear && matchesSemester && matchesType;
+  });
+
   return (
     <div className={`container mx-auto p-4 min-h-screen transition-colors duration-200 ${
       isDarkMode ? 'bg-gray-900 text-gray-100' : 'bg-gray-50 text-gray-900'
@@ -173,90 +189,208 @@ const AcademicForm = () => {
         </button>
       </div>
 
-      {/* Resources List */}
-      <div className="mt-6 space-y-4">
-        {resources.map((resource) => (
-          <div
-            key={resource._id}
-            className={`rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-all ${
-              isDarkMode ? 'bg-gray-800' : 'bg-white'
+      {/* Add Filter Section */}
+      <div className={`mb-6 p-4 rounded-xl ${isDarkMode ? 'bg-gray-800' : 'bg-white'} shadow-lg`}>
+        <div className="grid md:grid-cols-3 gap-4">
+          {/* Year Filter */}
+          <select
+            value={filters.year}
+            onChange={(e) => setFilters(prev => ({ ...prev, year: e.target.value }))}
+            className={`w-full p-3 rounded-lg border focus:ring-2 focus:ring-purple-500 ${
+              isDarkMode 
+                ? 'bg-gray-700 border-gray-600 text-white' 
+                : 'bg-white border-gray-300 text-gray-900'
             }`}
           >
-            <div 
-              className="flex justify-between items-center cursor-pointer p-6"
-              onClick={() => setExpandedItem(expandedItem === resource._id ? null : resource._id)}
-            >
-              <div className="flex flex-col">
-                <span className={`font-medium ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>
-                  {resource.title}
-                </span>
-                <span className={isDarkMode ? 'text-gray-400' : 'text-gray-700'}>
-                  {resource.subject} - {resource.year} ({resource.semester})
-                </span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <button
-                  className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600 flex items-center"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleEdit(resource);
-                  }}
-                >
-                  <FiEdit2 className="inline mr-1" /> Edit
-                </button>
-                <button
-                  className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 flex items-center"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDelete(resource._id);
-                  }}
-                >
-                  <FiTrash2 className="inline mr-1" /> Delete
-                </button>
-                {expandedItem === resource._id ? <FiChevronUp /> : <FiChevronDown />}
-              </div>
-            </div>
+            <option value="">All Years</option>
+            <option value="First Year">First Year</option>
+            <option value="Second Year">Second Year</option>
+            <option value="Third Year">Third Year</option>
+            <option value="MSc Part 1">MSc Part 1</option>
+            <option value="MSc Part 2">MSc Part 2</option>
+          </select>
 
-            {/* Expanded Content */}
-            {expandedItem === resource._id && (
-              <div className={`mt-4 border-t pt-4 px-6 pb-6 ${
-                isDarkMode ? 'border-gray-700' : 'border-gray-200'
+          {/* Semester Filter */}
+          <select
+            value={filters.semester}
+            onChange={(e) => setFilters(prev => ({ ...prev, semester: e.target.value }))}
+            className={`w-full p-3 rounded-lg border focus:ring-2 focus:ring-purple-500 ${
+              isDarkMode 
+                ? 'bg-gray-700 border-gray-600 text-white' 
+                : 'bg-white border-gray-300 text-gray-900'
+            }`}
+          >
+            <option value="">All Semesters</option>
+            <option value="Semester 1">Semester 1</option>
+            <option value="Semester 2">Semester 2</option>
+            <option value="Semester 3">Semester 3</option>
+            <option value="Semester 4">Semester 4</option>
+            <option value="semester 5">Semester 5</option>
+            <option value="semester 6">Semester 6</option>
+            <option value="part 1">Part 1</option>
+            <option value="part 2">Part 2</option>
+          </select>
+
+          {/* Type Filter */}
+          <select
+            value={filters.type}
+            onChange={(e) => setFilters(prev => ({ ...prev, type: e.target.value }))}
+            className={`w-full p-3 rounded-lg border focus:ring-2 focus:ring-purple-500 ${
+              isDarkMode 
+                ? 'bg-gray-700 border-gray-600 text-white' 
+                : 'bg-white border-gray-300 text-gray-900'
+            }`}
+          >
+            <option value="">All Types</option>
+            <option value="syllabus">Syllabus</option>
+            <option value="notes">Notes</option>
+          </select>
+        </div>
+
+        {/* Active Filters Display */}
+        {(filters.year || filters.semester || filters.type) && (
+          <div className="mt-4 flex flex-wrap items-center gap-2">
+            <span className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+              Active filters:
+            </span>
+            {filters.year && (
+              <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm ${
+                isDarkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-700'
               }`}>
-                <div className="grid gap-4">
-                  {resource.mediaUrl && (
-                    <div>
-                      <h3 className={`font-semibold mb-3 ${
-                        isDarkMode ? 'text-gray-100' : 'text-gray-900'
-                      }`}>Document Preview</h3>
-                      <div className="bg-gray-700 p-2 rounded">
-                        <div className="aspect-w-16 aspect-h-9">
-                          <iframe
-                            src={formatMediaUrl(resource.mediaUrl)}
-                            className="w-full h-[600px] rounded-lg"
-                            frameBorder="0"
-                            allowFullScreen
-                            loading="lazy"
-                          />
-                        </div>
-                        <div className="mt-4 text-center">
-                          <a
-                            href={resource.mediaUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-blue-600 hover:underline flex items-center justify-center"
-                          >
-                            <FiUpload className="mr-2" />
-                            View Original
-                          </a>
-                        </div>
-                      </div>
-                    </div>
-                  )}
+                Year: {filters.year}
+                <FiTrash2 
+                  className="ml-2 cursor-pointer" 
+                  onClick={() => setFilters(prev => ({ ...prev, year: '' }))}
+                />
+              </span>
+            )}
+            {filters.semester && (
+              <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm ${
+                isDarkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-700'
+              }`}>
+                Semester: {filters.semester}
+                <FiTrash2 
+                  className="ml-2 cursor-pointer" 
+                  onClick={() => setFilters(prev => ({ ...prev, semester: '' }))}
+                />
+              </span>
+            )}
+            {filters.type && (
+              <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm ${
+                isDarkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-700'
+              }`}>
+                Type: {filters.type}
+                <FiTrash2 
+                  className="ml-2 cursor-pointer" 
+                  onClick={() => setFilters(prev => ({ ...prev, type: '' }))}
+                />
+              </span>
+            )}
+            {/* Clear All Filters */}
+            <button
+              onClick={() => setFilters({ year: '', semester: '', type: '' })}
+              className="text-sm text-purple-500 hover:text-purple-600 ml-2"
+            >
+              Clear all
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Update Resources List to use filteredResources */}
+      <div className="mt-6 space-y-4">
+        {filteredResources.length > 0 ? (
+          filteredResources.map((resource) => (
+            <div
+              key={resource._id}
+              className={`rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-all ${
+                isDarkMode ? 'bg-gray-800' : 'bg-white'
+              }`}
+            >
+              <div 
+                className="flex justify-between items-center cursor-pointer p-6"
+                onClick={() => setExpandedItem(expandedItem === resource._id ? null : resource._id)}
+              >
+                <div className="flex flex-col">
+                  <span className={`font-medium ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>
+                    {resource.title}
+                  </span>
+                  <span className={isDarkMode ? 'text-gray-400' : 'text-gray-700'}>
+                    {resource.subject} - {resource.year} ({resource.semester})
+                  </span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <button
+                    className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600 flex items-center"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleEdit(resource);
+                    }}
+                  >
+                    <FiEdit2 className="inline mr-1" /> Edit
+                  </button>
+                  <button
+                    className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 flex items-center"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDelete(resource._id);
+                    }}
+                  >
+                    <FiTrash2 className="inline mr-1" /> Delete
+                  </button>
+                  {expandedItem === resource._id ? <FiChevronUp /> : <FiChevronDown />}
                 </div>
               </div>
+
+              {/* Expanded Content */}
+              {expandedItem === resource._id && (
+                <div className={`mt-4 border-t pt-4 px-6 pb-6 ${
+                  isDarkMode ? 'border-gray-700' : 'border-gray-200'
+                }`}>
+                  <div className="grid gap-4">
+                    {resource.mediaUrl && (
+                      <div>
+                        <h3 className={`font-semibold mb-3 ${
+                          isDarkMode ? 'text-gray-100' : 'text-gray-900'
+                        }`}>Document Preview</h3>
+                        <div className="bg-gray-700 p-2 rounded">
+                          <div className="aspect-w-16 aspect-h-9">
+                            <iframe
+                              src={formatMediaUrl(resource.mediaUrl)}
+                              className="w-full h-[600px] rounded-lg"
+                              frameBorder="0"
+                              allowFullScreen
+                              loading="lazy"
+                            />
+                          </div>
+                          <div className="mt-4 text-center">
+                            <a
+                              href={resource.mediaUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-600 hover:underline flex items-center justify-center"
+                            >
+                              <FiUpload className="mr-2" />
+                              View Original
+                            </a>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          ))
+        ) : (
+          <div className={`text-center py-12 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+            {filters.year || filters.semester || filters.type ? (
+              <p>No resources match your filters</p>
+            ) : (
+              <p>No academic resources available</p>
             )}
           </div>
-        ))}
+        )}
       </div>
 
       {/* Form Modal */}
